@@ -36,14 +36,10 @@ const auth = (...roles: string[]) => {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
       }
 
-      if (user.status === "BLOCKED") {
-        throw new ApiError(httpStatus.FORBIDDEN, "Your account is blocked!");
-      }
-
       req.user = verifiedUser as JwtPayload;
 
       if (roles.length && !roles.includes(verifiedUser.role)) {
-        throw new ApiError(httpStatus.FORBIDDEN, "Forbidden!");
+        throw new ApiError(httpStatus.FORBIDDEN, "Forbidden Access!");
       }
       next();
     } catch (err) {
