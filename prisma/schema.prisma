@@ -8,55 +8,77 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  fullName      String
-  image         String?   @default("")
-  email         String    @unique
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  email         String          @unique
   password      String
-  fcmToken      String?   @default("")
-  isDeleted     Boolean   @default(false)
+  fullName      String
+  image         String?         @default("")
+  location      String?         @default("")
+  monthlyRate   Float?          @default(0)
+  about         String?         @default("")
+  phoneNumber   String?         @default("")
+  experience    Int?            @default(0)
+  reviews       Int?            @default(0)
+  role          UserRole?       @default(USER)
+  isDeleted     Boolean         @default(false)
   expirationOtp DateTime?
   otp           Int?
-  role          UserRole  @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  profile       Profile[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  Rating        Rating[]
+  Experience    Experience[]
+  DriverProfile DriverProfile[]
 
   @@map("Users")
 }
 
-model Profile {
-  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
-  fullName           String
-  image              String?       @default("")
-  maritalStatus      MaritalStatus
-  location           String
-  maritalVerifyCount Int           @default(0)
-  redFlag            Int           @default(0)
-  yellowFlag         Int           @default(0)
-  greenFlag          Int           @default(0)
-  isDeleted          Boolean       @default(false)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  userId             String        @db.ObjectId
-  user               User          @relation(fields: [userId], references: [id])
+model Experience {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  company   String
+  position  String
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  userId    String    @db.ObjectId
+  user      User      @relation(fields: [userId], references: [id])
 
-  @@map("Profile")
+  @@map("Experience")
+}
+
+model Rating {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating    Int
+  message   String
+  createdAt DateTime @default(now())
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("Service-Rating")
+}
+
+model DriverProfile {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName         String
+  email            String
+  photo            String
+  drivingLicense   String
+  country          String
+  state            String
+  referenceNumber1 String
+  referenceNumber2 String
+  referenceEmail1  String
+  referenceEmail2  String
+  createdAt        DateTime @default(now())
+  userId           String   @db.ObjectId
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@map("Driver-Profile")
 }
 
 enum UserRole {
   ADMIN
   USER
-}
-
-enum MaritalStatus {
-  SINGLE
-  MARRIED
-  IN_RELATIONSHIP
-}
-
-enum FlagType {
-  RED
-  GREEN
-  YELLOW
+  EMPLOYER
+  AGENT
+  DRIVER
 }
