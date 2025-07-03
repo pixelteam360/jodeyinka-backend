@@ -1,15 +1,16 @@
 import { Server } from "http";
 import config from "./config";
 
-import prisma from "./shared/prisma";
 import app from "./app";
+import { setupWebSocket } from "./app/modules/WebSocket";
 
 let server: Server;
 
 async function startServer() {
   server = app.listen(config.port, () => {
-    console.log("Server is listiening on port ", config.port);
+    console.log("Server is listening on port ", config.port);
   });
+  setupWebSocket(server);
 }
 
 async function main() {
@@ -18,7 +19,7 @@ async function main() {
     if (server) {
       server.close(() => {
         console.info("Server closed!");
-        restartServer(); 
+        restartServer();
       });
     } else {
       process.exit(1);

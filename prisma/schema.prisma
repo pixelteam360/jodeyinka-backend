@@ -8,41 +8,32 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(auto()) @map("_id") @db.ObjectId
-  email         String          @unique
-  password      String
-  fullName      String
-  image         String?         @default("")
-  location      String?         @default("")
-  monthlyRate   Float?          @default(0)
-  about         String?         @default("")
-  phoneNumber   String?         @default("")
-  experience    Int?            @default(0)
-  reviews       Int?            @default(0)
-  role          UserRole?       @default(USER)
-  isDeleted     Boolean         @default(false)
-  expirationOtp DateTime?
-  otp           Int?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  Rating        Rating[]
-  Experience    Experience[]
-  DriverProfile DriverProfile[]
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  email            String         @unique
+  password         String
+  fullName         String
+  image            String?        @default("")
+  location         String?        @default("")
+  phoneNumber      String?        @default("")
+  reviews          Int?           @default(0)
+  role             UserRole?      @default(USER)
+  lat              Float?         @default(0)
+  lng              Float?         @default(0)
+  isDeleted        Boolean        @default(false)
+  expirationOtp    DateTime?
+  otp              Int?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  Rating           Rating[]
+  DriverProfile    DriverProfile?
+  Profile          Profile?
+  sentRooms        Room[]         @relation("RoomSender")
+  receivedRooms    Room[]         @relation("RoomReceiver")
+  sentMessages     Chat[]         @relation("ChatSender")
+  receivedMessages Chat[]         @relation("ChatReceiver")
+  AdminPayment     AdminPayment[]
 
   @@map("Users")
-}
-
-model Experience {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  company   String
-  position  String
-  startDate DateTime
-  endDate   DateTime?
-  createdAt DateTime  @default(now())
-  userId    String    @db.ObjectId
-  user      User      @relation(fields: [userId], references: [id])
-
-  @@map("Experience")
 }
 
 model Rating {
@@ -56,11 +47,27 @@ model Rating {
   @@map("Service-Rating")
 }
 
+model Profile {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  country       String
+  state         String
+  city          String
+  driverCanHire Int
+  createdAt     DateTime @default(now())
+  userId        String   @unique @db.ObjectId
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("Profile")
+}
+
 model DriverProfile {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
   fullName         String
   email            String
   photo            String
+  monthlyRate      Float        @default(0)
+  about            String       @default("")
+  experience       Int          @default(0)
   drivingLicense   String
   country          String
   state            String
@@ -68,11 +75,68 @@ model DriverProfile {
   referenceNumber2 String
   referenceEmail1  String
   referenceEmail2  String
-  createdAt        DateTime @default(now())
-  userId           String   @db.ObjectId
-  user             User     @relation(fields: [userId], references: [id])
+  createdAt        DateTime     @default(now())
+  userId           String       @unique @db.ObjectId
+  user             User         @relation(fields: [userId], references: [id])
+  Experience       Experience[]
 
   @@map("Driver-Profile")
+}
+
+model Experience {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  company         String
+  position        String
+  startDate       DateTime
+  endDate         DateTime?
+  createdAt       DateTime      @default(now())
+  userId          String        @db.ObjectId
+  driverProfileId String        @db.ObjectId
+  driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id])
+
+  @@map("Experience")
+}
+
+model AdminPayment {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  amount     Float
+  PaymentFor PaymentFor
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  userId     String     @db.ObjectId
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@map("Admin-Payment")
+}
+
+model Room {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  sender     User     @relation("RoomSender", fields: [senderId], references: [id])
+  receiver   User     @relation("RoomReceiver", fields: [receiverId], references: [id])
+  chat       Chat[]
+
+  @@map("Rooms")
+}
+
+model Chat {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  message    String
+  images     String?  @default("")
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  roomId     String   @db.ObjectId
+  sender     User     @relation("ChatSender", fields: [senderId], references: [id])
+  receiver   User     @relation("ChatReceiver", fields: [receiverId], references: [id])
+  room       Room     @relation(fields: [roomId], references: [id])
+
+  @@map("Chats")
 }
 
 enum UserRole {
@@ -81,4 +145,9 @@ enum UserRole {
   EMPLOYER
   AGENT
   DRIVER
+}
+
+enum PaymentFor {
+  DRIVER_SALARY
+  DRIVER_HIRE
 }

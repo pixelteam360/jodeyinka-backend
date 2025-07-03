@@ -39,7 +39,7 @@ const loginUser = async (payload: { email: string; password: string }) => {
     config.jwt.expires_in as string
   );
 
-  return { token: accessToken };
+  return { role: userData.role, token: accessToken };
 };
 
 const changePassword = async (
