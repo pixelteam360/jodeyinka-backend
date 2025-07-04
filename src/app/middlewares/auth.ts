@@ -25,7 +25,7 @@ const auth = (...roles: string[]) => {
         token,
         config.jwt.jwt_secret as Secret
       );
-      const { id, role, iat } = verifiedUser;
+      const { id } = verifiedUser;
 
       const user = await prisma.user.findUnique({
         where: {
@@ -34,6 +34,10 @@ const auth = (...roles: string[]) => {
       });
       if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
+      }
+
+      if (user.isDeleted) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
       }
 
       req.user = verifiedUser as JwtPayload;

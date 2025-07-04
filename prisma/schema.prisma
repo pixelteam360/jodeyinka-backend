@@ -24,6 +24,7 @@ model User {
   otp              Int?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  avgRating        Float?         @default(0)
   Rating           Rating[]
   DriverProfile    DriverProfile?
   Profile          Profile?
@@ -67,7 +68,6 @@ model DriverProfile {
   photo            String
   monthlyRate      Float        @default(0)
   about            String       @default("")
-  experience       Int          @default(0)
   drivingLicense   String
   country          String
   state            String
@@ -101,6 +101,7 @@ model AdminPayment {
   id         String     @id @default(auto()) @map("_id") @db.ObjectId
   amount     Float
   PaymentFor PaymentFor
+  paymentId String?   
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   userId     String     @db.ObjectId

@@ -7,7 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import streamifier from "streamifier"; 
+import streamifier from "streamifier";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -37,7 +37,6 @@ const upload = multer({ storage });
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
-  
     public_id: (req, file) => `${Date.now()}_${file.originalname}`,
   },
 });
@@ -51,14 +50,16 @@ const uploadFile = upload.single("file");
 // Upload multiple images
 const uploadMultipleImage = upload.fields([{ name: "images", maxCount: 15 }]);
 
-// Upload profile and banner images
-const updateProfile = upload.fields([
-  { name: "profile", maxCount: 1 },
-  { name: "banner", maxCount: 1 },
+// Upload driver profile images
+const driverProfile = upload.fields([
+  { name: "photo", maxCount: 1 },
+  { name: "licence", maxCount: 1 },
 ]);
 
 // ✅ Fixed Cloudinary Upload (Now supports buffer)
-const uploadToCloudinary = async (file: Express.Multer.File): Promise<{ Location: string; public_id: string }> => {
+const uploadToCloudinary = async (
+  file: Express.Multer.File
+): Promise<{ Location: string; public_id: string }> => {
   if (!file) {
     throw new Error("File is required for uploading.");
   }
@@ -127,7 +128,7 @@ export const fileUploader = {
   upload,
   uploadSingle,
   uploadMultipleImage,
-  updateProfile,
+  driverProfile,
   uploadFile,
   cloudinaryUpload,
   uploadToDigitalOcean,

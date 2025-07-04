@@ -120,8 +120,11 @@ const getMyProfile = async (userEmail: string) => {
       id: true,
       fullName: true,
       email: true,
-      createdAt: true,
-      updatedAt: true,
+      location: true,
+      image: true,
+      role: true,
+      phoneNumber: true,
+      avgRating: true,
     },
   });
 
@@ -129,10 +132,15 @@ const getMyProfile = async (userEmail: string) => {
 };
 
 const updateProfile = async (payload: User, imageFile: any, userId: string) => {
+  const existingUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, image: true },
+  });
+
   const result = await prisma.$transaction(async (prisma) => {
-    let image = "";
+    let image = existingUser?.image || "";
     if (imageFile) {
-      image = (await fileUploader.uploadToCloudinary(imageFile)).Location;
+      image = (await fileUploader.uploadToDigitalOcean(imageFile)).Location;
     }
 
     const createUserProfile = await prisma.user.update({
@@ -140,7 +148,7 @@ const updateProfile = async (payload: User, imageFile: any, userId: string) => {
       data: { ...payload, image },
     });
 
-    return createUserProfile;
+    return { message: "Profile updated successfully" };
   });
 
   return result;
