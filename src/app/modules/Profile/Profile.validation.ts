@@ -30,8 +30,18 @@ const DriverProfileSchema = z.object({
   referenceEmail2: z.string().email(),
 });
 
+const UpdateDriverProfileSchema = z.object({
+  fullName: z.string().optional(),
+  email: z.string().email().optional(),
+  monthlyRate: z.number().default(0).optional(),
+  about: z.string().default("").optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+});
+
 export const ProfileValidation = {
   ProfileValidationSchema,
   ProfileUpdateSchema,
   DriverProfileSchema,
+  UpdateDriverProfileSchema
 };

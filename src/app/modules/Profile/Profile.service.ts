@@ -118,6 +118,23 @@ const getProfilesFromDb = async () => {
 };
 
 const myProfile = async (id: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id },
+    select: { id: true, role: true },
+  });
+
+  if (user?.role === "DRIVER") {
+    const profile = await prisma.driverProfile.findUnique({
+      where: { userId: id },
+    });
+
+    if (!profile) {
+      throw new ApiError(404, "Profile not found");
+    }
+
+    return profile;
+  }
+
   const profile = await prisma.profile.findUnique({
     where: { userId: id },
     select: {
@@ -155,10 +172,57 @@ const updateProfile = async (payload: Profile, userId: string) => {
   return result;
 };
 
+const updateDriverProfile = async (
+  payload: Partial<TDriverProfile>,
+  userId: string,
+  photo: any,
+  licence: any
+) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      DriverProfile: { select: { photo: true, drivingLicense: true } },
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.role !== "USER") {
+    throw new ApiError(409, "Profile already exists");
+  }
+
+  let photoUrl = user.DriverProfile?.photo;
+
+  if (photo) {
+    photoUrl = (await fileUploader.uploadToDigitalOcean(photo)).Location;
+  }
+  let licenceUrl = user.DriverProfile?.drivingLicense;
+
+  if (licenceUrl) {
+    licenceUrl = (await fileUploader.uploadToDigitalOcean(licence)).Location;
+  }
+
+  const result = await prisma.driverProfile.update({
+    where: { userId: user.id },
+    data: {
+      ...payload,
+      photo: photoUrl!,
+      drivingLicense: licenceUrl!,
+    },
+  });
+
+  return result;
+};
+
 export const ProfileService = {
   createProfileIntoDb,
   createDriverProfile,
   getProfilesFromDb,
   myProfile,
   updateProfile,
+  updateDriverProfile,
 };

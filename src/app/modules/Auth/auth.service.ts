@@ -207,16 +207,21 @@ const verifyForgotPasswordOtp = async (payload: {
   email: string;
   otp: number;
 }) => {
-  // Check if the user exists
   const user = await prisma.user.findUnique({
     where: { email: payload.email },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      otp: true,
+      expirationOtp: true,
+    },
   });
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "This user is not found!");
   }
 
-  // Check if the OTP is valid and not expired
   if (
     user.otp !== payload.otp ||
     !user.expirationOtp ||
@@ -225,16 +230,29 @@ const verifyForgotPasswordOtp = async (payload: {
     throw new ApiError(httpStatus.BAD_REQUEST, "Invalid OTP");
   }
 
-  // Update the user's OTP, OTP expiration, and verification status
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      otp: null, // Clear the OTP
-      expirationOtp: null, // Clear the OTP expiration
+      otp: null,
+      expirationOtp: null,
     },
   });
 
-  return { message: "OTP verification successful" };
+  const accessToken = jwtHelpers.generateToken(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
+
+  return {
+    message: "OTP verification successful",
+    role: user.role,
+    token: accessToken,
+  };
 };
 
 const resetPassword = async (payload: { password: string; email: string }) => {

@@ -22,15 +22,22 @@ router
     ProfileController.updateProfile
   );
 
-router.route("/driver").post(
-  auth(UserRole.USER),
-  fileUploader.driverProfile,
-  (req: Request, res: Response, next: NextFunction) => {
-    req.body = JSON.parse(req.body.data);
-    next();
-  },
-  validateRequest(ProfileValidation.DriverProfileSchema),
-  ProfileController.createDriverProfile
-);
+router
+  .route("/driver")
+  .post(
+    auth(UserRole.USER),
+    fileUploader.driverProfile,
+    (req: Request, res: Response, next: NextFunction) => {
+      req.body = JSON.parse(req.body.data);
+      next();
+    },
+    validateRequest(ProfileValidation.DriverProfileSchema),
+    ProfileController.createDriverProfile
+  )
+  .put(
+    auth(UserRole.DRIVER),
+    validateRequest(ProfileValidation.UpdateDriverProfileSchema),
+    ProfileController.updateDriverProfile
+  );
 
 export const ProfileRoutes = router;
