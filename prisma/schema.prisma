@@ -25,9 +25,10 @@ model User {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   avgRating        Float?         @default(0)
-  Rating           Rating[]
   DriverProfile    DriverProfile?
   Profile          Profile?
+  receivedRating   UserRating[]   @relation("receiverRating")
+  sendedRating     UserRating[]   @relation("senderRating")
   sentRooms        Room[]         @relation("RoomSender")
   receivedRooms    Room[]         @relation("RoomReceiver")
   sentMessages     Chat[]         @relation("ChatSender")
@@ -37,15 +38,17 @@ model User {
   @@map("Users")
 }
 
-model Rating {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  rating    Int
-  message   String
-  createdAt DateTime @default(now())
-  userId    String   @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
+model UserRating {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  rating     Int
+  message    String
+  createdAt  DateTime @default(now())
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  sender     User     @relation("senderRating", fields: [senderId], references: [id])
+  receiver   User     @relation("receiverRating", fields: [receiverId], references: [id])
 
-  @@map("Service-Rating")
+  @@map("User-Rating")
 }
 
 model Profile {
@@ -55,6 +58,7 @@ model Profile {
   city          String
   driverCanHire Int
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   userId        String   @unique @db.ObjectId
   user          User     @relation(fields: [userId], references: [id])
 
@@ -66,7 +70,7 @@ model DriverProfile {
   fullName         String
   email            String
   photo            String
-  monthlyRate      Float        @default(0)
+  monthlyRate      String
   about            String       @default("")
   drivingLicense   String
   country          String
@@ -76,6 +80,7 @@ model DriverProfile {
   referenceEmail1  String
   referenceEmail2  String
   createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
   userId           String       @unique @db.ObjectId
   user             User         @relation(fields: [userId], references: [id])
   Experience       Experience[]
@@ -90,7 +95,7 @@ model Experience {
   startDate       DateTime
   endDate         DateTime?
   createdAt       DateTime      @default(now())
-  userId          String        @db.ObjectId
+  updatedAt       DateTime      @updatedAt
   driverProfileId String        @db.ObjectId
   driverProfile   DriverProfile @relation(fields: [driverProfileId], references: [id])
 
@@ -101,7 +106,7 @@ model AdminPayment {
   id         String     @id @default(auto()) @map("_id") @db.ObjectId
   amount     Float
   PaymentFor PaymentFor
-  paymentId String?   
+  paymentId  String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   userId     String     @db.ObjectId

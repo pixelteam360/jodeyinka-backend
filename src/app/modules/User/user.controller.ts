@@ -23,8 +23,8 @@ const getUsers = catchAsync(async (req, res) => {
 });
 
 const getMyProfile = catchAsync(async (req, res) => {
-  const { email } = req.user;
-  const result = await userService.getMyProfile(email);
+  const { id } = req.user;
+  const result = await userService.getMyProfile(id);
   sendResponse(res, {
     message: "User profile retrieved successfully",
     data: result,
@@ -40,9 +40,27 @@ const updateProfile = catchAsync(async (req, res) => {
   });
 });
 
+const provideReview = catchAsync(async (req, res) => {
+  const result = await userService.provideReview(req.body, req.user.id);
+  sendResponse(res, {
+    message: "Review provided successfully!",
+    data: result,
+  });
+});
+
+const userReviews = catchAsync(async (req, res) => {
+  const result = await userService.userReviews(req.params.id);
+  sendResponse(res, {
+    message: "Review retrieved successfully!",
+    data: result,
+  });
+});
+
 export const userController = {
   createUser,
   getUsers,
   getMyProfile,
   updateProfile,
+  provideReview,
+  userReviews
 };

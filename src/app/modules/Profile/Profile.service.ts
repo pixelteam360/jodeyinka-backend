@@ -191,18 +191,15 @@ const updateDriverProfile = async (
     throw new ApiError(404, "User not found");
   }
 
-  if (user.role !== "USER") {
-    throw new ApiError(409, "Profile already exists");
-  }
-
   let photoUrl = user.DriverProfile?.photo;
 
   if (photo) {
     photoUrl = (await fileUploader.uploadToDigitalOcean(photo)).Location;
   }
+
   let licenceUrl = user.DriverProfile?.drivingLicense;
 
-  if (licenceUrl) {
+  if (licence) {
     licenceUrl = (await fileUploader.uploadToDigitalOcean(licence)).Location;
   }
 

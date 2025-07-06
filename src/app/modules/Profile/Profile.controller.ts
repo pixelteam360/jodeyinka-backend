@@ -56,16 +56,20 @@ const updateProfile = catchAsync(async (req, res) => {
 });
 
 const updateDriverProfile = catchAsync(async (req, res) => {
-  const { photo, licence } = req.files as {
+  const files = req.files as {
     photo: Express.Multer.File[];
     licence: Express.Multer.File[];
   };
 
   const photoFile =
-    Array.isArray(photo) && photo.length > 0 ? photo[0] : undefined;
+    Array.isArray(files.photo) && files.photo.length > 0
+      ? files.photo[0]
+      : undefined;
 
   const licenceFile =
-    Array.isArray(licence) && licence.length > 0 ? licence[0] : undefined;
+    Array.isArray(files.licence) && files.licence.length > 0
+      ? files.licence[0]
+      : undefined;
 
   const result = await ProfileService.updateDriverProfile(
     req.body,
@@ -73,6 +77,7 @@ const updateDriverProfile = catchAsync(async (req, res) => {
     photoFile,
     licenceFile
   );
+
   sendResponse(res, {
     message: "Driver Profile Updated successfully!",
     data: result,

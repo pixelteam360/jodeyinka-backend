@@ -36,6 +36,11 @@ router
   )
   .put(
     auth(UserRole.DRIVER),
+    fileUploader.driverProfile,
+    (req: Request, res: Response, next: NextFunction) => {
+      req.body = JSON.parse(req.body.data);
+      next();
+    },
     validateRequest(ProfileValidation.UpdateDriverProfileSchema),
     ProfileController.updateDriverProfile
   );

@@ -15,8 +15,15 @@ const userUpdateSchema = z.object({
   fullName: z.string().optional(),
 });
 
+const RatingSchema = z.object({
+  rating: z.number(),
+  message: z.string(),
+  receiverId: z.string(),
+});
+
 export const UserValidation = {
   CreateUserValidationSchema,
   UserLoginValidationSchema,
   userUpdateSchema,
+  RatingSchema,
 };

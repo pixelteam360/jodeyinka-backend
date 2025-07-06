@@ -18,7 +18,7 @@ export type TDriverProfile = {
   fullName: string;
   email: string;
   photo: string;
-  monthlyRate: number;
+  monthlyRate: string;
   about: string;
   drivingLicense: string;
   country: string;

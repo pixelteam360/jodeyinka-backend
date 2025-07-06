@@ -20,7 +20,7 @@ const ProfileUpdateSchema = z.object({
 const DriverProfileSchema = z.object({
   fullName: z.string(),
   email: z.string().email(),
-  monthlyRate: z.number().default(0),
+  monthlyRate: z.string(),
   about: z.string().default(""),
   country: z.string(),
   state: z.string(),
@@ -33,7 +33,7 @@ const DriverProfileSchema = z.object({
 const UpdateDriverProfileSchema = z.object({
   fullName: z.string().optional(),
   email: z.string().email().optional(),
-  monthlyRate: z.number().default(0).optional(),
+  monthlyRate: z.string().optional(),
   about: z.string().default("").optional(),
   country: z.string().optional(),
   state: z.string().optional(),
@@ -43,5 +43,5 @@ export const ProfileValidation = {
   ProfileValidationSchema,
   ProfileUpdateSchema,
   DriverProfileSchema,
-  UpdateDriverProfileSchema
+  UpdateDriverProfileSchema,
 };

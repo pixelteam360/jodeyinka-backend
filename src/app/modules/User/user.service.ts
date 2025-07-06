@@ -10,8 +10,7 @@ import { fileUploader } from "../../../helpars/fileUploader";
 import { IUserFilterRequest, TUser } from "./user.interface";
 import { emailSender } from "../../../shared/emailSender";
 import crypto from "crypto";
-import { jwtHelpers } from "../../../helpars/jwtHelpers";
-import { Secret } from "jsonwebtoken";
+import httpStatus from "http-status";
 
 const createUserIntoDb = async (payload: TUser) => {
   const existingUser = await prisma.user.findFirst({
@@ -157,10 +156,47 @@ const getUsersFromDb = async (
   };
 };
 
-const getMyProfile = async (userEmail: string) => {
+const getMyProfile = async (id: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id },
+    select: { id: true, role: true },
+  });
+
+  if (user?.role === "DRIVER") {
+    const userProfile = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        location: true,
+        image: true,
+        role: true,
+        phoneNumber: true,
+        avgRating: true,
+        DriverProfile: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            photo: true,
+            monthlyRate: true,
+            drivingLicense: true,
+            country: true,
+            state: true,
+            about: true,
+          },
+        },
+      },
+    });
+    return userProfile;
+  }
+
   const userProfile = await prisma.user.findUnique({
     where: {
-      email: userEmail,
+      id: id,
     },
     select: {
       id: true,
@@ -171,6 +207,7 @@ const getMyProfile = async (userEmail: string) => {
       role: true,
       phoneNumber: true,
       avgRating: true,
+      Profile: true,
     },
   });
 
@@ -200,9 +237,70 @@ const updateProfile = async (payload: User, imageFile: any, userId: string) => {
   return result;
 };
 
+const provideReview = async (
+  payload: { rating: number; message: string; receiverId: string },
+  senderId: string
+) => {
+  const user = await prisma.user.findFirst({
+    where: { id: senderId },
+  });
+
+  if (payload.rating > 5) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Rating must be under 5");
+  }
+
+  const driver = await prisma.user.findFirst({
+    where: { id: payload.receiverId, role: "DRIVER" },
+  });
+
+  if (!driver) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Receiver not found");
+  }
+
+  const result = await prisma.$transaction(async (prisma) => {
+    const serviceRating = await prisma.userRating.create({
+      data: {
+        rating: payload.rating,
+        message: payload.message,
+        senderId,
+        receiverId: payload.receiverId,
+      },
+    });
+
+    const averageRating = await prisma.userRating.aggregate({
+      _avg: { rating: true },
+    });
+
+    await prisma.user.update({
+      where: { id: user?.id },
+      data: { avgRating: averageRating._avg.rating },
+    });
+
+    return serviceRating;
+  });
+  return result;
+};
+
+const userReviews = async (id: string) => {
+  const result = await prisma.userRating.findMany({
+    where: { receiverId: id },
+    select: {
+      id: true,
+      rating: true,
+      message: true,
+      createdAt: true,
+      sender: { select: { fullName: true, image: true, location: true } },
+    },
+  });
+
+  return result;
+};
+
 export const userService = {
   createUserIntoDb,
   getUsersFromDb,
   getMyProfile,
   updateProfile,
+  provideReview,
+  userReviews,
 };

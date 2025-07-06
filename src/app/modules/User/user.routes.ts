@@ -18,7 +18,7 @@ router
 
 router
   .route("/profile")
-  .get(auth(UserRole.ADMIN, UserRole.USER), userController.getMyProfile)
+  .get(auth(), userController.getMyProfile)
   .put(
     auth(UserRole.ADMIN, UserRole.USER),
     fileUploader.uploadSingle,
@@ -29,5 +29,14 @@ router
     validateRequest(UserValidation.userUpdateSchema),
     userController.updateProfile
   );
+
+router
+  .route("/review")
+  .post(
+    auth(),
+    validateRequest(UserValidation.RatingSchema),
+    userController.provideReview
+  );
+router.get("/review/:id", auth(), userController.userReviews);
 
 export const UserRoutes = router;
