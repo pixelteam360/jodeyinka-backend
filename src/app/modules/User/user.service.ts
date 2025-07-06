@@ -257,6 +257,31 @@ const provideReview = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Receiver not found");
   }
 
+  if (senderId === payload.receiverId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Receiver and sender can not be same."
+    );
+  }
+
+  const threeMonthAgo = new Date();
+  threeMonthAgo.setMonth(threeMonthAgo.getMonth() - 3);
+
+  const existingReview = await prisma.userRating.findFirst({
+    where: {
+      receiverId: payload.receiverId,
+      senderId,
+      createdAt: { gte: threeMonthAgo },
+    },
+  });
+
+  if (existingReview) {
+    throw new ApiError(
+      400,
+      "You already submitted a review to this user within the last 3 months"
+    );
+  }
+
   const result = await prisma.$transaction(async (prisma) => {
     const serviceRating = await prisma.userRating.create({
       data: {
@@ -293,7 +318,14 @@ const userReviews = async (id: string) => {
     },
   });
 
-  return result;
+  const groupedRating = await prisma.userRating.groupBy({
+    by: ["rating"],
+    where: { receiverId: id },
+    _count: { rating: true },
+    orderBy: { rating: "desc" },
+  });
+
+  return { groupedRating, result };
 };
 
 export const userService = {

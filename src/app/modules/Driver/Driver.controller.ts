@@ -15,17 +15,23 @@ const allDrivers = catchAsync(async (req, res) => {
 });
 
 const singleDriver = catchAsync(async (req, res) => {
-  const result = await DriverService.singleDriver(
-    req.params.id
-  );
+  const result = await DriverService.singleDriver(req.params.id);
   sendResponse(res, {
     message: "Driver retrieved successfully!",
     data: result,
   });
 });
 
+const hireADriver = catchAsync(async (req, res) => {
+  const result = await DriverService.hireADriver(req.body, req.user.id);
+  sendResponse(res, {
+    message: "Driver retrieved successfully!",
+    data: result,
+  });
+});
 
 export const DriverController = {
   allDrivers,
   singleDriver,
+  hireADriver
 };

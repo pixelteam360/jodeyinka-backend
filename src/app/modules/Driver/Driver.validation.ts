@@ -1,13 +1,12 @@
+import { HiringStatus } from "@prisma/client";
 import { z } from "zod";
 
-
-
-const DriverUpdateSchema = z.object({
-  rating: z.number(),
-  message: z.string(),
-  senderId: z.string(),
+const HireDriverSchema = z.object({
+  offerAmount: z.number(),
+  aboutOffer: z.string(),
+  driverId: z.string(),
 });
 
 export const DriverValidation = {
-  DriverUpdateSchema,
+  HireDriverSchema,
 };

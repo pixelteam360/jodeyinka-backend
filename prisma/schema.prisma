@@ -34,6 +34,8 @@ model User {
   sentMessages     Chat[]         @relation("ChatSender")
   receivedMessages Chat[]         @relation("ChatReceiver")
   AdminPayment     AdminPayment[]
+  hiringSender     DriverHire[]   @relation("hiringSender")
+  hiringReceiver   DriverHire[]   @relation("hiringReceiver")
 
   @@map("Users")
 }
@@ -115,6 +117,21 @@ model AdminPayment {
   @@map("Admin-Payment")
 }
 
+model DriverHire {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  offerAmount      Float
+  aboutOffer       String
+  status           HiringStatus @default(PENDING)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  userId   String       @db.ObjectId
+  driverId String       @db.ObjectId
+  user     User         @relation("hiringSender", fields: [userId], references: [id])
+  driver   User         @relation("hiringReceiver", fields: [driverId], references: [id])
+
+  @@map("Driver-Hire")
+}
+
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   senderId   String   @db.ObjectId
@@ -156,4 +173,11 @@ enum UserRole {
 enum PaymentFor {
   DRIVER_SALARY
   DRIVER_HIRE
+  REVIEW
+}
+
+enum HiringStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }

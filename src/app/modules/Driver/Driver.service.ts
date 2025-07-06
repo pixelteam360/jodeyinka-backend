@@ -1,6 +1,6 @@
 import prisma from "../../../shared/prisma";
 import { Prisma } from "@prisma/client";
-import { IDriverFilterRequest } from "./Driver.interface";
+import { IDriverFilterRequest, TDriverHire } from "./Driver.interface";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { paginationHelper } from "../../../helpars/paginationHelper";
 import { driverSearchAbleFields } from "./Driver.costant";
@@ -81,7 +81,9 @@ const singleDriver = async (id: string) => {
       image: true,
       location: true,
       avgRating: true,
-      DriverProfile: { select: { monthlyRate: true, about: true, Experience: true } },
+      DriverProfile: {
+        select: { monthlyRate: true, about: true, Experience: true },
+      },
     },
   });
 
@@ -92,8 +94,46 @@ const singleDriver = async (id: string) => {
   return result;
 };
 
+const hireADriver = async (payload: TDriverHire, userId: string) => {
+  const driver = await prisma.user.findFirst({
+    where: { id: payload.driverId, role: "DRIVER" },
+    select: { id: true },
+  });
+
+  if (!driver) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Driver not found");
+  }
+
+  const alreadyHired = await prisma.driverHire.findFirst({
+    where: { driverId: driver.id, status: "ACCEPTED" },
+    select: { id: true },
+  });
+
+  if (alreadyHired) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Driver is already hired");
+  }
+
+  const sendedHiring = await prisma.driverHire.findFirst({
+    where: { driverId: driver.id, userId },
+    select: { id: true },
+  });
+
+  if (sendedHiring) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "You have already sended a request"
+    );
+  }
+
+  const result = await prisma.driverHire.create({
+    data: { ...payload, userId },
+  });
+
+  return result;
+};
 
 export const DriverService = {
   allDrivers,
   singleDriver,
+  hireADriver,
 };
