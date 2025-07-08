@@ -30,8 +30,47 @@ const hireADriver = catchAsync(async (req, res) => {
   });
 });
 
+const myhiring = catchAsync(async (req, res) => {
+  const filters = pick(req.query, userFilterableFields);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await DriverService.myhiring(filters, options, req.user.id);
+  sendResponse(res, {
+    message: "Hiring retrieved successfully",
+    data: result,
+  });
+});
+
+const singleHiring = catchAsync(async (req, res) => {
+  const result = await DriverService.singleHiring(req.params.id, req.user.id);
+  sendResponse(res, {
+    message: "Hiring offer retrieved successfully!",
+    data: result,
+  });
+});
+
+const acceptHiring = catchAsync(async (req, res) => {
+  const result = await DriverService.acceptHiring(req.params.id, req.user.id);
+  sendResponse(res, {
+    message: "Driver accepted successfully!",
+    data: result,
+  });
+});
+
+const deletehiring = catchAsync(async (req, res) => {
+  const result = await DriverService.deletehiring(req.params.id, req.user.id);
+  sendResponse(res, {
+    message: "Hiring deleted successfully!",
+    data: result,
+  });
+});
+
+
 export const DriverController = {
   allDrivers,
   singleDriver,
-  hireADriver
+  hireADriver,
+  myhiring,
+  singleHiring,
+  acceptHiring,
+  deletehiring,
 };

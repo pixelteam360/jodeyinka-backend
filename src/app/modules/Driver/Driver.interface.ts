@@ -17,3 +17,10 @@ export type IDriverFilterRequest = {
   contactNumber?: string | undefined;
   searchTerm?: string | undefined;
 };
+
+export type IDriverHireFilterRequest = {
+  name?: string | undefined;
+  email?: string | undefined;
+  contactNumber?: string | undefined;
+  searchTerm?: string | undefined;
+};
