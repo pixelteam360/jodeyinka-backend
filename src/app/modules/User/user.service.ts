@@ -156,6 +156,26 @@ const getUsersFromDb = async (
   };
 };
 
+const singleUser = async (id: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id },
+    select: {
+      id: true,
+      fullName: true,
+      image: true,
+      role: true,
+      avgRating: true,
+      Profile: { select: { about: true } },
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  return user;
+};
+
 const getMyProfile = async (id: string) => {
   const user = await prisma.user.findFirst({
     where: { id },
@@ -306,7 +326,18 @@ const provideReview = async (
   return result;
 };
 
-const userReviews = async (id: string) => {
+const userReviews = async (id: string, userId: string) => {
+  const paidForReview = await prisma.adminPayment.findFirst({
+    where: { reviewerId: userId, reviewOwnerId: id },
+  });
+
+  if (!paidForReview) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You have to pay to view the reivews"
+    );
+  }
+
   const result = await prisma.userRating.findMany({
     where: { receiverId: id },
     select: {
@@ -335,4 +366,5 @@ export const userService = {
   updateProfile,
   provideReview,
   userReviews,
+  singleUser,
 };

@@ -39,4 +39,6 @@ router
   );
 router.get("/review/:id", auth(), userController.userReviews);
 
+router.route("/:id").get(auth(), userController.singleUser);
+
 export const UserRoutes = router;

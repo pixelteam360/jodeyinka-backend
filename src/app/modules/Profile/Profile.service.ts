@@ -41,7 +41,7 @@ const createProfileIntoDb = async (payload: TProfile, userId: string) => {
         amount: payload.paymentAmount,
         PaymentFor: "DRIVER_HIRE",
         paymentId: payload.paymentId,
-        userId: user.id,
+        reviewerId: user.id,
       },
     });
 

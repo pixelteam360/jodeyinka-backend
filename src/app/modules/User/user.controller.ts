@@ -22,6 +22,15 @@ const getUsers = catchAsync(async (req, res) => {
   });
 });
 
+const singleUser = catchAsync(async (req, res) => {
+  const { id } = req.user;
+  const result = await userService.singleUser(id);
+  sendResponse(res, {
+    message: "User profile retrieved successfully",
+    data: result,
+  });
+});
+
 const getMyProfile = catchAsync(async (req, res) => {
   const { id } = req.user;
   const result = await userService.getMyProfile(id);
@@ -49,7 +58,7 @@ const provideReview = catchAsync(async (req, res) => {
 });
 
 const userReviews = catchAsync(async (req, res) => {
-  const result = await userService.userReviews(req.params.id);
+  const result = await userService.userReviews(req.params.id, req.user.id);
   sendResponse(res, {
     message: "Review retrieved successfully!",
     data: result,
@@ -59,8 +68,9 @@ const userReviews = catchAsync(async (req, res) => {
 export const userController = {
   createUser,
   getUsers,
+  singleUser,
   getMyProfile,
   updateProfile,
   provideReview,
-  userReviews
+  userReviews,
 };

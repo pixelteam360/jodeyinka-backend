@@ -1,5 +1,5 @@
 import prisma from "../../../shared/prisma";
-import { HiringStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import {
   IDriverFilterRequest,
   IDriverHireFilterRequest,
@@ -101,6 +101,40 @@ const singleDriver = async (id: string) => {
   return result;
 };
 
+const bookmarkDriver = async (driverId: string, userId: string) => {
+  const driver = await prisma.user.findFirst({
+    where: { id: driverId, role: "DRIVER" },
+  });
+  if (!driver) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Driver not found");
+  }
+
+  const result = await prisma.bookMarkDriver.create({
+    data: { driverId, userId },
+  });
+
+  return result;
+};
+
+const getMyBookMarks = async (userId: string) => {
+  const res = await prisma.bookMarkDriver.findMany({
+    where: { userId },
+    select: {
+      driver: {
+        select: {
+          fullName: true,
+          image: true,
+          avgRating: true,
+          location: true,
+          DriverProfile: { select: { about: true } },
+        },
+      },
+    },
+  });
+
+  return res;
+};
+
 const hireADriver = async (payload: TDriverHire, userId: string) => {
   const driver = await prisma.user.findFirst({
     where: { id: payload.driverId, role: "DRIVER" },
@@ -129,6 +163,22 @@ const hireADriver = async (payload: TDriverHire, userId: string) => {
     throw new ApiError(
       httpStatus.NOT_FOUND,
       "You have already sended a request"
+    );
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId },
+    select: { id: true, Profile: { select: { driverCanHire: true } } },
+  });
+
+  const acceptedHiring = await prisma.driverHire.count({
+    where: { userId, status: "ACCEPTED" },
+  });
+
+  if (user?.Profile?.driverCanHire! <= acceptedHiring) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You have reached your maximum driver hiring limit."
     );
   }
 
@@ -274,7 +324,13 @@ const singleHiring = async (hiringId: string, userId: string) => {
 const acceptHiring = async (hiringId: string, userId: string) => {
   const offer = await prisma.driverHire.findFirst({
     where: { id: hiringId },
-    select: { id: true, driverId: true },
+    select: {
+      id: true,
+      driverId: true,
+      user: {
+        select: { id: true, Profile: { select: { driverCanHire: true } } },
+      },
+    },
   });
 
   if (offer?.driverId !== userId) {
@@ -288,6 +344,17 @@ const acceptHiring = async (hiringId: string, userId: string) => {
 
   if (isHiried) {
     throw new ApiError(httpStatus.FORBIDDEN, "You are already hiried");
+  }
+
+  const acceptedHiring = await prisma.driverHire.count({
+    where: { userId: offer.user.id, status: "ACCEPTED" },
+  });
+
+  if (offer.user.Profile?.driverCanHire! <= acceptedHiring) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "User have reached her maximum driver hiring limit."
+    );
   }
 
   const result = await prisma.driverHire.update({
@@ -320,11 +387,12 @@ const deletehiring = async (id: string, userId: string) => {
   return { message: "Hiring Deleted successfully" };
 };
 
-
 export const DriverService = {
   allDrivers,
   singleDriver,
   hireADriver,
+  bookmarkDriver,
+  getMyBookMarks,
   myhiring,
   singleHiring,
   acceptHiring,

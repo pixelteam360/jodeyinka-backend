@@ -4,6 +4,7 @@ import { UserRoutes } from "../modules/User/user.routes";
 import { ProfileRoutes } from "../modules/Profile/Profile.routes";
 import { ExperienceRoutes } from "../modules/Experience/Experience.routes";
 import { DriverRoutes } from "../modules/Driver/Driver.routes";
+import { PaymentRoutes } from "../modules/Payment/Payment.routes";
 
 const router = express.Router();
 
@@ -27,6 +28,10 @@ const moduleRoutes = [
   {
     path: "/driver",
     route: DriverRoutes,
+  },
+  {
+    path: "/payment",
+    route: PaymentRoutes,
   },
 ];
 

@@ -30,6 +30,22 @@ const hireADriver = catchAsync(async (req, res) => {
   });
 });
 
+const bookmarkDriver = catchAsync(async (req, res) => {
+  const result = await DriverService.bookmarkDriver(req.params.id, req.user.id);
+  sendResponse(res, {
+    message: "Driver bookmarked successfully!",
+    data: result,
+  });
+});
+
+const getMyBookMarks = catchAsync(async (req, res) => {
+  const result = await DriverService.getMyBookMarks(req.user.id);
+  sendResponse(res, {
+    message: "Bookmarked retrieved successfully!",
+    data: result,
+  });
+});
+
 const myhiring = catchAsync(async (req, res) => {
   const filters = pick(req.query, userFilterableFields);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
@@ -64,11 +80,12 @@ const deletehiring = catchAsync(async (req, res) => {
   });
 });
 
-
 export const DriverController = {
   allDrivers,
   singleDriver,
   hireADriver,
+  bookmarkDriver,
+  getMyBookMarks,
   myhiring,
   singleHiring,
   acceptHiring,

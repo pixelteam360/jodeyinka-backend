@@ -84,6 +84,7 @@ const updateDriverProfile = catchAsync(async (req, res) => {
   });
 });
 
+
 export const ProfileController = {
   createProfile,
   createDriverProfile,

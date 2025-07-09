@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
 import auth from "../../middlewares/auth";
 import { DriverController } from "./Driver.controller";
@@ -16,6 +16,13 @@ router
     DriverController.hireADriver
   );
 
+router
+  .route("/bookmark")
+  .get(
+    auth(UserRole.AGENT, UserRole.EMPLOYER),
+    DriverController.getMyBookMarks
+  );
+
 router.route("/my-hiring").get(auth(), DriverController.myhiring);
 
 router.route("/:id").get(auth(), DriverController.singleDriver);
@@ -25,5 +32,12 @@ router
   .get(auth(), DriverController.singleHiring)
   .patch(auth(UserRole.DRIVER), DriverController.acceptHiring)
   .delete(auth(UserRole.DRIVER), DriverController.deletehiring);
+
+router
+  .route("/bookmark/:id")
+  .post(
+    auth(UserRole.AGENT, UserRole.EMPLOYER),
+    DriverController.bookmarkDriver
+  );
 
 export const DriverRoutes = router;
