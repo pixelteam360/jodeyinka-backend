@@ -12,7 +12,7 @@ router
   .route("/")
   .get(auth(), ProfileController.myProfile)
   .post(
-    auth(UserRole.USER),
+    auth(UserRole.AGENT, UserRole.EMPLOYER),
     validateRequest(ProfileValidation.ProfileValidationSchema),
     ProfileController.createProfile
   )
@@ -25,8 +25,8 @@ router
 router
   .route("/driver")
   .post(
-    auth(UserRole.USER),
-    fileUploader.driverProfile,
+    auth(UserRole.DRIVER),
+    fileUploader.uploadSingle,
     (req: Request, res: Response, next: NextFunction) => {
       req.body = JSON.parse(req.body.data);
       next();
@@ -36,7 +36,7 @@ router
   )
   .put(
     auth(UserRole.DRIVER),
-    fileUploader.driverProfile,
+    fileUploader.uploadSingle,
     (req: Request, res: Response, next: NextFunction) => {
       req.body = JSON.parse(req.body.data);
       next();

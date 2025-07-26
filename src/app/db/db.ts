@@ -5,15 +5,16 @@ import config from "../../config";
 export const initiateSuperAdmin = async () => {
   const hashedPassword=await bcrypt.hash('123456789',Number(config.bcrypt_salt_rounds))
   const payload: any = {
-    fullName : "Admin",
-    email: "admin@gmail.com",
+    fullName : "Super Admin",
+    email: "super.admin@gmail.com",
     password: hashedPassword,
-    role: UserRole.ADMIN,
+    role: UserRole.SUPER_ADMIN,
   };
 
   const isExistUser = await prisma.user.findUnique({
     where: {
       email: payload.email,
+      role: payload.role,
     },
   });
 

@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -21,64 +32,80 @@ const createProfileIntoDb = (payload, userId) => __awaiter(void 0, void 0, void 
         where: {
             id: userId,
         },
-        select: { id: true, role: true },
+        select: { id: true, role: true, completedProfile: true },
     });
     if (!user) {
         throw new ApiErrors_1.default(404, "User not found");
     }
-    if (user.role !== "USER") {
-        throw new ApiErrors_1.default(409, "Profile already exists");
+    if (user.completedProfile) {
+        throw new ApiErrors_1.default(400, "Profile already created");
     }
+    const { reference } = payload, restData = __rest(payload, ["reference"]);
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         const profile = yield prisma.profile.create({
-            data: {
-                city: payload.city,
-                userId: user.id,
-                country: payload.country,
-                state: payload.state,
-                driverCanHire: payload.driverCanHire,
-            },
+            data: Object.assign(Object.assign({}, restData), { userId: user.id }),
         });
         yield prisma.user.update({
             where: { id: user.id },
-            data: { role: payload.role },
+            data: { completedProfile: true },
         });
+        yield Promise.all(reference.map((number) => __awaiter(void 0, void 0, void 0, function* () {
+            yield prisma.userReference.create({
+                data: {
+                    phoneNumber: number,
+                    userId: user.id,
+                },
+            });
+        })));
         yield prisma.adminPayment.create({
             data: {
                 amount: payload.paymentAmount,
                 PaymentFor: "DRIVER_HIRE",
                 paymentId: payload.paymentId,
-                userId: user.id,
+                reviewerId: user.id,
             },
         });
         return profile;
     }));
     return result;
 });
-const createDriverProfile = (payload, userId, photo, licence) => __awaiter(void 0, void 0, void 0, function* () {
+const createDriverProfile = (payload, userId, license) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield prisma_1.default.user.findUnique({
         where: { id: userId },
         select: {
             id: true,
             role: true,
+            completedProfile: true,
         },
     });
     if (!user) {
         throw new ApiErrors_1.default(404, "User not found");
     }
-    if (user.role !== "USER") {
-        throw new ApiErrors_1.default(409, "Profile already exists");
+    if (!license) {
+        throw new ApiErrors_1.default(400, "License is required");
     }
-    if (!photo || !licence) {
-        throw new ApiErrors_1.default(400, "Photo and licence are required");
+    if (user.completedProfile) {
+        throw new ApiErrors_1.default(400, "Profile already created");
     }
-    const photoUrl = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(photo)).Location;
-    const licenceUrl = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(licence))
+    const drivingLicense = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(license))
         .Location;
+    const { reference } = payload, restData = __rest(payload, ["reference"]);
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
         const profile = yield prisma.driverProfile.create({
-            data: Object.assign(Object.assign({}, payload), { photo: photoUrl, drivingLicense: licenceUrl, userId: user.id }),
+            data: Object.assign(Object.assign({}, restData), { userId, drivingLicense }),
         });
+        yield prisma.user.update({
+            where: { id: user.id },
+            data: { completedProfile: true },
+        });
+        yield Promise.all(reference.map((number) => __awaiter(void 0, void 0, void 0, function* () {
+            yield prisma.userReference.create({
+                data: {
+                    phoneNumber: number,
+                    userId: user.id,
+                },
+            });
+        })));
         yield prisma.user.update({
             where: { id: user.id },
             data: { role: "DRIVER" },
@@ -116,14 +143,6 @@ const myProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const profile = yield prisma_1.default.profile.findUnique({
         where: { userId: id },
-        select: {
-            id: true,
-            country: true,
-            state: true,
-            city: true,
-            driverCanHire: true,
-            userId: true,
-        },
     });
     if (!profile) {
         throw new ApiErrors_1.default(404, "Profile not found");
@@ -144,30 +163,27 @@ const updateProfile = (payload, userId) => __awaiter(void 0, void 0, void 0, fun
     });
     return result;
 });
-const updateDriverProfile = (payload, userId, photo, licence) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+const updateDriverProfile = (payload, userId, license) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const user = yield prisma_1.default.user.findUnique({
         where: { id: userId },
         select: {
             id: true,
             role: true,
-            DriverProfile: { select: { photo: true, drivingLicense: true } },
+            DriverProfile: { select: { drivingLicense: true } },
         },
     });
     if (!user) {
         throw new ApiErrors_1.default(404, "User not found");
     }
-    let photoUrl = (_a = user.DriverProfile) === null || _a === void 0 ? void 0 : _a.photo;
-    if (photo) {
-        photoUrl = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(photo)).Location;
-    }
-    let licenceUrl = (_b = user.DriverProfile) === null || _b === void 0 ? void 0 : _b.drivingLicense;
-    if (licence) {
-        licenceUrl = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(licence)).Location;
+    let drivingLicense = (_a = user.DriverProfile) === null || _a === void 0 ? void 0 : _a.drivingLicense;
+    if (license) {
+        drivingLicense = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(license))
+            .Location;
     }
     const result = yield prisma_1.default.driverProfile.update({
         where: { userId: user.id },
-        data: Object.assign(Object.assign({}, payload), { photo: photoUrl, drivingLicense: licenceUrl }),
+        data: Object.assign(Object.assign({}, payload), { drivingLicense: drivingLicense }),
     });
     return result;
 });

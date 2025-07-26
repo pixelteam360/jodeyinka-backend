@@ -67,9 +67,10 @@ const allDrivers = (params, options) => __awaiter(void 0, void 0, void 0, functi
             id: true,
             fullName: true,
             image: true,
-            location: true,
             avgRating: true,
-            DriverProfile: { select: { monthlyRate: true } },
+            DriverProfile: {
+                select: { monthlyRate: true, state: true, city: true, country: true },
+            },
         },
     });
     const total = yield prisma_1.default.user.count({
@@ -91,10 +92,15 @@ const singleDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
             id: true,
             fullName: true,
             image: true,
-            location: true,
             avgRating: true,
             DriverProfile: {
-                select: { monthlyRate: true, about: true, Experience: true },
+                select: {
+                    about: true,
+                    Experience: true,
+                    country: true,
+                    state: true,
+                    city: true,
+                },
             },
         },
     });
@@ -103,7 +109,38 @@ const singleDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
     }
     return result;
 });
+const bookmarkDriver = (driverId, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const driver = yield prisma_1.default.user.findFirst({
+        where: { id: driverId, role: "DRIVER" },
+    });
+    if (!driver) {
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Driver not found");
+    }
+    const result = yield prisma_1.default.bookMarkDriver.create({
+        data: { driverId, userId },
+    });
+    return result;
+});
+const getMyBookMarks = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const res = yield prisma_1.default.bookMarkDriver.findMany({
+        where: { userId },
+        select: {
+            driver: {
+                select: {
+                    fullName: true,
+                    image: true,
+                    avgRating: true,
+                    DriverProfile: {
+                        select: { about: true, country: true, state: true, city: true },
+                    },
+                },
+            },
+        },
+    });
+    return res;
+});
 const hireADriver = (payload, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const driver = yield prisma_1.default.user.findFirst({
         where: { id: payload.driverId, role: "DRIVER" },
         select: { id: true },
@@ -125,13 +162,190 @@ const hireADriver = (payload, userId) => __awaiter(void 0, void 0, void 0, funct
     if (sendedHiring) {
         throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "You have already sended a request");
     }
+    const user = yield prisma_1.default.user.findFirst({
+        where: { id: userId },
+        select: { id: true, Profile: { select: { driverCanHire: true } } },
+    });
+    const acceptedHiring = yield prisma_1.default.driverHire.count({
+        where: { userId, status: "ACCEPTED" },
+    });
+    if (((_a = user === null || user === void 0 ? void 0 : user.Profile) === null || _a === void 0 ? void 0 : _a.driverCanHire) <= acceptedHiring) {
+        throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "You have reached your maximum driver hiring limit.");
+    }
     const result = yield prisma_1.default.driverHire.create({
         data: Object.assign(Object.assign({}, payload), { userId }),
     });
     return result;
 });
+const myhiring = (params, options, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield prisma_1.default.user.findFirst({
+        where: { id: userId },
+        select: { id: true, role: true },
+    });
+    const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
+    const andCondions = [];
+    if (params.searchTerm) {
+        andCondions.push({
+            OR: Driver_costant_1.driverHireSearchAbleFields.map((field) => ({
+                [field]: {
+                    contains: params.searchTerm,
+                    mode: "insensitive",
+                },
+            })),
+        });
+    }
+    if (Object.keys(filterData).length > 0) {
+        andCondions.push({
+            AND: Object.keys(filterData).map((key) => ({
+                [key]: {
+                    equals: filterData[key],
+                },
+            })),
+        });
+    }
+    let whereConditons = {
+        AND: andCondions,
+    };
+    if ((user === null || user === void 0 ? void 0 : user.role) === "DRIVER") {
+        whereConditons.driverId = user.id;
+    }
+    else {
+        whereConditons.userId = user === null || user === void 0 ? void 0 : user.id;
+    }
+    const result = yield prisma_1.default.driverHire.findMany({
+        where: whereConditons,
+        skip,
+        orderBy: options.sortBy && options.sortOrder
+            ? {
+                [options.sortBy]: options.sortOrder,
+            }
+            : {
+                createdAt: "desc",
+            },
+        select: {
+            id: true,
+            offerAmount: true,
+            status: true,
+            user: {
+                select: { id: true, image: true, fullName: true, avgRating: true },
+            },
+            driver: {
+                select: { id: true, image: true, fullName: true, avgRating: true },
+            },
+        },
+    });
+    const total = yield prisma_1.default.driverHire.count({
+        where: whereConditons,
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: result,
+    };
+});
+const singleHiring = (hiringId, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield prisma_1.default.user.findFirst({
+        where: { id: userId },
+        select: { id: true, role: true },
+    });
+    if ((user === null || user === void 0 ? void 0 : user.role) === "DRIVER") {
+        const result = yield prisma_1.default.driverHire.findUnique({
+            where: { id: hiringId },
+            select: {
+                id: true,
+                offerAmount: true,
+                aboutOffer: true,
+                status: true,
+                user: {
+                    select: { id: true, image: true, fullName: true, avgRating: true },
+                },
+            },
+        });
+        if (!result) {
+            throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Data not found");
+        }
+        return result;
+    }
+    const result = yield prisma_1.default.driverHire.findUnique({
+        where: { id: hiringId },
+        select: {
+            id: true,
+            offerAmount: true,
+            aboutOffer: true,
+            status: true,
+            driver: {
+                select: { id: true, image: true, fullName: true, avgRating: true },
+            },
+        },
+    });
+    if (!result) {
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Data not found");
+    }
+    return result;
+});
+const acceptHiring = (hiringId, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const offer = yield prisma_1.default.driverHire.findFirst({
+        where: { id: hiringId },
+        select: {
+            id: true,
+            driverId: true,
+            user: {
+                select: { id: true, Profile: { select: { driverCanHire: true } } },
+            },
+        },
+    });
+    if ((offer === null || offer === void 0 ? void 0 : offer.driverId) !== userId) {
+        throw new ApiErrors_1.default(http_status_1.default.UNAUTHORIZED, "Unauthorize access");
+    }
+    const isHiried = yield prisma_1.default.driverHire.findFirst({
+        where: { driverId: userId, status: { not: "ACCEPTED" } },
+        select: { id: true },
+    });
+    if (isHiried) {
+        throw new ApiErrors_1.default(http_status_1.default.FORBIDDEN, "You are already hiried");
+    }
+    const acceptedHiring = yield prisma_1.default.driverHire.count({
+        where: { userId: offer.user.id, status: "ACCEPTED" },
+    });
+    if (((_a = offer.user.Profile) === null || _a === void 0 ? void 0 : _a.driverCanHire) <= acceptedHiring) {
+        throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "User have reached her maximum driver hiring limit.");
+    }
+    const result = yield prisma_1.default.driverHire.update({
+        where: { id: offer.id },
+        data: { status: "ACCEPTED" },
+        select: { id: true, status: true },
+    });
+    return result;
+});
+const deletehiring = (id, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const offer = yield prisma_1.default.driverHire.findFirst({
+        where: { id },
+        select: { id: true, userId: true, driverId: true },
+    });
+    if (!offer) {
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Data not found");
+    }
+    if (offer.userId !== userId && offer.driverId !== userId) {
+        throw new ApiErrors_1.default(http_status_1.default.UNAUTHORIZED, "Unauthorize access");
+    }
+    yield prisma_1.default.driverHire.delete({
+        where: { id },
+    });
+    return { message: "Hiring Deleted successfully" };
+});
 exports.DriverService = {
     allDrivers,
     singleDriver,
     hireADriver,
+    bookmarkDriver,
+    getMyBookMarks,
+    myhiring,
+    singleHiring,
+    acceptHiring,
+    deletehiring,
 };

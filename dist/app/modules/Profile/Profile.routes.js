@@ -15,15 +15,15 @@ const router = express_1.default.Router();
 router
     .route("/")
     .get((0, auth_1.default)(), Profile_controller_1.ProfileController.myProfile)
-    .post((0, auth_1.default)(client_1.UserRole.USER), (0, validateRequest_1.default)(Profile_validation_1.ProfileValidation.ProfileValidationSchema), Profile_controller_1.ProfileController.createProfile)
+    .post((0, auth_1.default)(client_1.UserRole.AGENT, client_1.UserRole.EMPLOYER), (0, validateRequest_1.default)(Profile_validation_1.ProfileValidation.ProfileValidationSchema), Profile_controller_1.ProfileController.createProfile)
     .put((0, auth_1.default)(client_1.UserRole.AGENT, client_1.UserRole.EMPLOYER), (0, validateRequest_1.default)(Profile_validation_1.ProfileValidation.ProfileUpdateSchema), Profile_controller_1.ProfileController.updateProfile);
 router
     .route("/driver")
-    .post((0, auth_1.default)(client_1.UserRole.USER), fileUploader_1.fileUploader.driverProfile, (req, res, next) => {
+    .post((0, auth_1.default)(client_1.UserRole.DRIVER), fileUploader_1.fileUploader.uploadSingle, (req, res, next) => {
     req.body = JSON.parse(req.body.data);
     next();
 }, (0, validateRequest_1.default)(Profile_validation_1.ProfileValidation.DriverProfileSchema), Profile_controller_1.ProfileController.createDriverProfile)
-    .put((0, auth_1.default)(client_1.UserRole.DRIVER), fileUploader_1.fileUploader.driverProfile, (req, res, next) => {
+    .put((0, auth_1.default)(client_1.UserRole.DRIVER), fileUploader_1.fileUploader.uploadSingle, (req, res, next) => {
     req.body = JSON.parse(req.body.data);
     next();
 }, (0, validateRequest_1.default)(Profile_validation_1.ProfileValidation.UpdateDriverProfileSchema), Profile_controller_1.ProfileController.updateDriverProfile);

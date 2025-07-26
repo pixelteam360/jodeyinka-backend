@@ -73,12 +73,12 @@ const createUserIntoDb = (payload) => __awaiter(void 0, void 0, void 0, function
   <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
     
     <div style="background-color: #1CAD4D; padding: 30px; text-align: center;">
-      <h1 style="margin: 0; color: #ffffff; font-size: 26px;">Forgot Password</h1>
+      <h1 style="margin: 0; color: #ffffff; font-size: 26px;">Email verification OTP</h1>
       <p style="margin: 8px 0 0; color: #e0f7ec; font-size: 14px;">Your One-Time Password (OTP) is below</p>
     </div>
     
     <div style="padding: 30px; text-align: center;">
-      <p style="font-size: 16px; color: #333333; margin-bottom: 10px;">Use the OTP below to reset your password:</p>
+      <p style="font-size: 16px; color: #333333; margin-bottom: 10px;">Use the OTP below to verify your email:</p>
       <p style="font-size: 36px; font-weight: bold; color: #1CAD4D; margin: 20px 0;">${otp}</p>
       <p style="font-size: 14px; color: #666666; margin: 0 0 20px;">This code will expire in <strong>10 minutes</strong>.</p>
     </div>
@@ -137,7 +137,7 @@ const getUsersFromDb = (params, options) => __awaiter(void 0, void 0, void 0, fu
     }
     const whereConditons = { AND: andCondions };
     const result = yield prisma_1.default.user.findMany({
-        where: whereConditons,
+        where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" } }),
         skip,
         orderBy: options.sortBy && options.sortOrder
             ? {
@@ -156,11 +156,8 @@ const getUsersFromDb = (params, options) => __awaiter(void 0, void 0, void 0, fu
         },
     });
     const total = yield prisma_1.default.user.count({
-        where: whereConditons,
+        where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" } }),
     });
-    if (!result || result.length === 0) {
-        throw new ApiErrors_1.default(404, "No active users found");
-    }
     return {
         meta: {
             page,
@@ -169,6 +166,23 @@ const getUsersFromDb = (params, options) => __awaiter(void 0, void 0, void 0, fu
         },
         data: result,
     };
+});
+const singleUser = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield prisma_1.default.user.findFirst({
+        where: { id },
+        select: {
+            id: true,
+            fullName: true,
+            image: true,
+            role: true,
+            avgRating: true,
+            Profile: { select: { about: true } },
+        },
+    });
+    if (!user) {
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    return user;
 });
 const getMyProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield prisma_1.default.user.findFirst({
@@ -184,24 +198,16 @@ const getMyProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
                 id: true,
                 fullName: true,
                 email: true,
-                location: true,
                 image: true,
                 role: true,
-                phoneNumber: true,
+                completedProfile: true,
                 avgRating: true,
-                DriverProfile: {
+                _count: {
                     select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                        photo: true,
-                        monthlyRate: true,
-                        drivingLicense: true,
-                        country: true,
-                        state: true,
-                        about: true,
+                        UserReference: { where: { isVerified: true } },
                     },
                 },
+                DriverProfile: true,
             },
         });
         return userProfile;
@@ -214,11 +220,15 @@ const getMyProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
             id: true,
             fullName: true,
             email: true,
-            location: true,
             image: true,
             role: true,
-            phoneNumber: true,
+            completedProfile: true,
             avgRating: true,
+            _count: {
+                select: {
+                    UserReference: { where: { isVerified: true } },
+                },
+            },
             Profile: true,
         },
     });
@@ -229,11 +239,11 @@ const updateProfile = (payload, imageFile, userId) => __awaiter(void 0, void 0, 
         where: { id: userId },
         select: { id: true, image: true },
     });
+    let image = (existingUser === null || existingUser === void 0 ? void 0 : existingUser.image) || "";
+    if (imageFile) {
+        image = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(imageFile)).Location;
+    }
     const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
-        let image = (existingUser === null || existingUser === void 0 ? void 0 : existingUser.image) || "";
-        if (imageFile) {
-            image = (yield fileUploader_1.fileUploader.uploadToDigitalOcean(imageFile)).Location;
-        }
         const createUserProfile = yield prisma.user.update({
             where: { id: userId },
             data: Object.assign(Object.assign({}, payload), { image }),
@@ -290,7 +300,13 @@ const provideReview = (payload, senderId) => __awaiter(void 0, void 0, void 0, f
     }));
     return result;
 });
-const userReviews = (id) => __awaiter(void 0, void 0, void 0, function* () {
+const userReviews = (id, userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const paidForReview = yield prisma_1.default.adminPayment.findFirst({
+        where: { reviewerId: userId, reviewOwnerId: id },
+    });
+    if (!paidForReview) {
+        throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "You have to pay to view the reivews");
+    }
     const result = yield prisma_1.default.userRating.findMany({
         where: { receiverId: id },
         select: {
@@ -298,7 +314,13 @@ const userReviews = (id) => __awaiter(void 0, void 0, void 0, function* () {
             rating: true,
             message: true,
             createdAt: true,
-            sender: { select: { fullName: true, image: true, location: true } },
+            sender: {
+                select: {
+                    fullName: true,
+                    image: true,
+                    Profile: { select: { country: true, state: true, city: true } },
+                },
+            },
         },
     });
     const groupedRating = yield prisma_1.default.userRating.groupBy({
@@ -316,4 +338,5 @@ exports.userService = {
     updateProfile,
     provideReview,
     userReviews,
+    singleUser,
 };

@@ -29,10 +29,10 @@ const paymentForMoreDriver = async (
 };
 
 const paymentForReview = async (
-  payload: { paymentAmount: number; paymentId: string; userId: string },
+  payload: { paymentAmount: number; paymentId: string; reviewOwnerId: string },
   userId: string
 ) => {
-  const user = await prisma.user.findFirst({ where: { id: payload.userId } });
+  const user = await prisma.user.findFirst({ where: { id: payload.reviewOwnerId } });
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -44,7 +44,7 @@ const paymentForReview = async (
       PaymentFor: "REVIEW",
       paymentId: payload.paymentId,
       reviewerId: userId,
-      reviewOwnerId: payload.userId,
+      reviewOwnerId: payload.reviewOwnerId,
     },
   });
 

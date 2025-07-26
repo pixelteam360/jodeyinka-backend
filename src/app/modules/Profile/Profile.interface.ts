@@ -1,33 +1,47 @@
-import { UserRole } from "@prisma/client";
-
 export type TProfile = {
   id: string;
-  country: string;
+  driverCanHire: number;
+  paymentAmount: number;
+  paymentId?: string | null;
+  companyName: string;
+  fullName: string;
+  address: string;
   state: string;
   city: string;
-  driverCanHire: number;
-  createdAt: Date;
+  country: string;
+  gender: string;
+  age: number;
+  dateOfBirth: string;
+  phoneNumber: string;
+  salaryRange: string;
+  typeOfVehicleOwned: string;
+  hiredDriverBefore: boolean;
+  driverPaymentMethod: string;
+  driverGiniPaymentMethod: string;
+  about: string;
+  createdAt: string;
+  updatedAt: string;
   userId: string;
-  role: UserRole;
-  paymentAmount: number;
-  paymentId?: string;
+  reference: string[];
 };
 
 export type TDriverProfile = {
   id: string;
   fullName: string;
-  email: string;
-  photo: string;
-  monthlyRate: string;
-  about: string;
-  drivingLicense: string;
-  country: string;
+  address: string;
   state: string;
-  referenceNumber1: string;
-  referenceNumber2: string;
-  referenceEmail1: string;
-  referenceEmail2: string;
-  createdAt: Date;
+  city: string;
+  country: string;
+  gender: string;
+  age: number;
+  dateOfBirth: string; // ISO 8601 string
+  drivingLicense: string;
+  typeOfVehicle: string;
+  salaryRange: string;
+  about: string;
+  createdAt: string;
+  updatedAt: string;
   userId: string;
+  monthlyRate: string;
+  reference: string[];
 };
-

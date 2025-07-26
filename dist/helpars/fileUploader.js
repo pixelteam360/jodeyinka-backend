@@ -54,8 +54,7 @@ const uploadFile = upload.single("file");
 const uploadMultipleImage = upload.fields([{ name: "images", maxCount: 15 }]);
 // Upload driver profile images
 const driverProfile = upload.fields([
-    { name: "photo", maxCount: 1 },
-    { name: "licence", maxCount: 1 },
+    { name: "license", maxCount: 1 },
 ]);
 // ✅ Fixed Cloudinary Upload (Now supports buffer)
 const uploadToCloudinary = (file) => __awaiter(void 0, void 0, void 0, function* () {

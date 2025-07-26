@@ -41,8 +41,58 @@ const hireADriver = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
         data: result,
     });
 }));
+const bookmarkDriver = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Driver_service_1.DriverService.bookmarkDriver(req.params.id, req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Driver bookmarked successfully!",
+        data: result,
+    });
+}));
+const getMyBookMarks = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Driver_service_1.DriverService.getMyBookMarks(req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Bookmarked retrieved successfully!",
+        data: result,
+    });
+}));
+const myhiring = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filters = (0, pick_1.default)(req.query, user_costant_1.userFilterableFields);
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield Driver_service_1.DriverService.myhiring(filters, options, req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Hiring retrieved successfully",
+        data: result,
+    });
+}));
+const singleHiring = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Driver_service_1.DriverService.singleHiring(req.params.id, req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Hiring offer retrieved successfully!",
+        data: result,
+    });
+}));
+const acceptHiring = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Driver_service_1.DriverService.acceptHiring(req.params.id, req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Driver accepted successfully!",
+        data: result,
+    });
+}));
+const deletehiring = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Driver_service_1.DriverService.deletehiring(req.params.id, req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Hiring deleted successfully!",
+        data: result,
+    });
+}));
 exports.DriverController = {
     allDrivers,
     singleDriver,
-    hireADriver
+    hireADriver,
+    bookmarkDriver,
+    getMyBookMarks,
+    myhiring,
+    singleHiring,
+    acceptHiring,
+    deletehiring,
 };

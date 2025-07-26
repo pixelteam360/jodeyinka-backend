@@ -14,16 +14,10 @@ const createProfile = catchAsync(async (req, res) => {
 });
 
 const createDriverProfile = catchAsync(async (req, res) => {
-  const { photo, licence } = req.files as {
-    photo: Express.Multer.File[];
-    licence: Express.Multer.File[];
-  };
-
   const result = await ProfileService.createDriverProfile(
     req.body,
     req.user.id,
-    photo[0],
-    licence[0]
+    req.file
   );
   sendResponse(res, {
     message: "Driver Profile Registered successfully!",
@@ -56,34 +50,16 @@ const updateProfile = catchAsync(async (req, res) => {
 });
 
 const updateDriverProfile = catchAsync(async (req, res) => {
-  const files = req.files as {
-    photo: Express.Multer.File[];
-    licence: Express.Multer.File[];
-  };
-
-  const photoFile =
-    Array.isArray(files.photo) && files.photo.length > 0
-      ? files.photo[0]
-      : undefined;
-
-  const licenceFile =
-    Array.isArray(files.licence) && files.licence.length > 0
-      ? files.licence[0]
-      : undefined;
-
   const result = await ProfileService.updateDriverProfile(
     req.body,
     req.user.id,
-    photoFile,
-    licenceFile
+    req.file
   );
-
   sendResponse(res, {
     message: "Driver Profile Updated successfully!",
     data: result,
   });
 });
-
 
 export const ProfileController = {
   createProfile,

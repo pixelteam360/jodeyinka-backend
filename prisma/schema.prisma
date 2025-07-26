@@ -13,18 +13,18 @@ model User {
   password           String
   fullName           String
   image              String?          @default("")
-  location           String?          @default("")
-  phoneNumber        String?          @default("")
   reviews            Int?             @default(0)
-  role               UserRole?        @default(USER)
+  avgRating          Int?             @default(0)
+  completedProfile   Boolean?         @default(false)
+  role               UserRole
   lat                Float?           @default(0)
   lng                Float?           @default(0)
+  verifiedEmail      Boolean          @default(false)
   isDeleted          Boolean          @default(false)
   expirationOtp      DateTime?
   otp                Int?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
-  avgRating          Int?             @default(0)
   DriverProfile      DriverProfile?
   Profile            Profile?
   receivedRating     UserRating[]     @relation("receiverRating")
@@ -39,8 +39,76 @@ model User {
   reviewsReceived    AdminPayment[]   @relation("ReviewOwnerPayments")
   bookmarksMade      BookMarkDriver[] @relation("BookmarkedByUser")
   bookmarkedAsDriver BookMarkDriver[] @relation("BookmarkedDriver")
+  UserReference      UserReference[]
+  Job                Job[]
+  JobApplication     JobApplication[]
 
   @@map("Users")
+}
+
+model UserReference {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  phoneNumber String
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("User-Reference")
+}
+
+model Profile {
+  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
+  driverCanHire           Int
+  paymentAmount           Float
+  paymentId               String?
+  companyName             String
+  fullName                String
+  address                 String
+  state                   String
+  city                    String
+  country                 String
+  gender                  String
+  age                     Int
+  dateOfBirth             DateTime
+  phoneNumber             String
+  salaryRange             String
+  typeOfVehicleOwned      String
+  hiredDriverBefore       Boolean
+  driverPaymentMethod     String
+  driverGiniPaymentMethod String
+  about                   String   @default("")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  userId                  String   @unique @db.ObjectId
+  user                    User     @relation(fields: [userId], references: [id])
+
+  @@map("Profile")
+}
+
+model DriverProfile {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  hired          Boolean      @default(false)
+  monthlyRate    String
+  fullName       String
+  address        String
+  state          String
+  city           String
+  country        String
+  gender         String
+  age            Int
+  dateOfBirth    DateTime
+  drivingLicense String
+  typeOfVehicle  String
+  salaryRange    String
+  about          String       @default("")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  userId         String       @unique @db.ObjectId
+  user           User         @relation(fields: [userId], references: [id])
+  Experience     Experience[]
+
+  @@map("Driver-Profile")
 }
 
 model UserRating {
@@ -54,44 +122,6 @@ model UserRating {
   receiver   User     @relation("receiverRating", fields: [receiverId], references: [id])
 
   @@map("User-Rating")
-}
-
-model Profile {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  country       String
-  state         String
-  city          String
-  driverCanHire Int
-  about         String   @default("")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  userId        String   @unique @db.ObjectId
-  user          User     @relation(fields: [userId], references: [id])
-
-  @@map("Profile")
-}
-
-model DriverProfile {
-  id               String       @id @default(auto()) @map("_id") @db.ObjectId
-  fullName         String
-  email            String
-  photo            String
-  monthlyRate      String
-  about            String       @default("")
-  drivingLicense   String
-  country          String
-  state            String
-  referenceNumber1 String
-  referenceNumber2 String
-  referenceEmail1  String
-  referenceEmail2  String
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  userId           String       @unique @db.ObjectId
-  user             User         @relation(fields: [userId], references: [id])
-  Experience       Experience[]
-
-  @@map("Driver-Profile")
 }
 
 model Experience {
@@ -126,28 +156,54 @@ model AdminPayment {
 }
 
 model DriverHire {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
-  offerAmount Float
-  aboutOffer  String
-  status      HiringStatus @default(PENDING)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userId      String       @db.ObjectId
-  driverId    String       @db.ObjectId
-  user        User         @relation("hiringSender", fields: [userId], references: [id])
-  driver      User         @relation("hiringReceiver", fields: [driverId], references: [id])
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  offerAmount   Float
+  aboutOffer    String
+  adminApproved Boolean      @default(false)
+  status        HiringStatus @default(PENDING)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  userId        String       @db.ObjectId
+  driverId      String       @db.ObjectId
+  user          User         @relation("hiringSender", fields: [userId], references: [id])
+  driver        User         @relation("hiringReceiver", fields: [driverId], references: [id])
 
   @@map("Driver-Hire")
 }
 
+model Job {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  hiringType HiringType
+  location   String
+  amount     Float
+  status     JobStatus  @default(PENDING)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  userId     String     @db.ObjectId
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@map("Job")
+}
+
+model JobApplication {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime     @default(now())
+  status    HiringStatus @default(PENDING)
+  updatedAt DateTime     @updatedAt
+  userId    String       @db.ObjectId
+  user      User         @relation(fields: [userId], references: [id])
+
+  @@map("Job-Application")
+}
+
 model BookMarkDriver {
-  id          String       @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  userId      String       @db.ObjectId
-  driverId    String       @db.ObjectId
-  user        User         @relation("BookmarkedByUser", fields: [userId], references: [id])
-  driver      User         @relation("BookmarkedDriver", fields: [driverId], references: [id])
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String   @db.ObjectId
+  driverId  String   @db.ObjectId
+  user      User     @relation("BookmarkedByUser", fields: [userId], references: [id])
+  driver    User     @relation("BookmarkedDriver", fields: [driverId], references: [id])
 
   @@map("BookMark-Driver")
 }
@@ -183,8 +239,8 @@ model Chat {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
-  USER
   EMPLOYER
   AGENT
   DRIVER
@@ -200,4 +256,15 @@ enum HiringStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum JobStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum HiringType {
+  DRIVER
+  AGENT
 }

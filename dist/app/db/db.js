@@ -43,14 +43,15 @@ const config_1 = __importDefault(require("../../config"));
 const initiateSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
     const hashedPassword = yield bcrypt.hash('123456789', Number(config_1.default.bcrypt_salt_rounds));
     const payload = {
-        fullName: "Admin",
-        email: "admin@gmail.com",
+        fullName: "Super Admin",
+        email: "super.admin@gmail.com",
         password: hashedPassword,
-        role: client_1.UserRole.ADMIN,
+        role: client_1.UserRole.SUPER_ADMIN,
     };
     const isExistUser = yield prisma_1.default.user.findUnique({
         where: {
             email: payload.email,
+            role: payload.role,
         },
     });
     if (isExistUser)

@@ -35,12 +35,12 @@ const createUserIntoDb = async (payload: TUser) => {
   <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
     
     <div style="background-color: #1CAD4D; padding: 30px; text-align: center;">
-      <h1 style="margin: 0; color: #ffffff; font-size: 26px;">Forgot Password</h1>
+      <h1 style="margin: 0; color: #ffffff; font-size: 26px;">Email verification OTP</h1>
       <p style="margin: 8px 0 0; color: #e0f7ec; font-size: 14px;">Your One-Time Password (OTP) is below</p>
     </div>
     
     <div style="padding: 30px; text-align: center;">
-      <p style="font-size: 16px; color: #333333; margin-bottom: 10px;">Use the OTP below to reset your password:</p>
+      <p style="font-size: 16px; color: #333333; margin-bottom: 10px;">Use the OTP below to verify your email:</p>
       <p style="font-size: 36px; font-weight: bold; color: #1CAD4D; margin: 20px 0;">${otp}</p>
       <p style="font-size: 14px; color: #666666; margin: 0 0 20px;">This code will expire in <strong>10 minutes</strong>.</p>
     </div>
@@ -120,7 +120,7 @@ const getUsersFromDb = async (
   const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
 
   const result = await prisma.user.findMany({
-    where: whereConditons,
+    where: { ...whereConditons, NOT: { role: "SUPER_ADMIN" } },
     skip,
     orderBy:
       options.sortBy && options.sortOrder
@@ -140,12 +140,9 @@ const getUsersFromDb = async (
     },
   });
   const total = await prisma.user.count({
-    where: whereConditons,
+    where: { ...whereConditons, NOT: { role: "SUPER_ADMIN" } },
   });
 
-  if (!result || result.length === 0) {
-    throw new ApiError(404, "No active users found");
-  }
   return {
     meta: {
       page,
@@ -191,24 +188,16 @@ const getMyProfile = async (id: string) => {
         id: true,
         fullName: true,
         email: true,
-        location: true,
         image: true,
         role: true,
-        phoneNumber: true,
+        completedProfile: true,
         avgRating: true,
-        DriverProfile: {
+        _count: {
           select: {
-            id: true,
-            fullName: true,
-            email: true,
-            photo: true,
-            monthlyRate: true,
-            drivingLicense: true,
-            country: true,
-            state: true,
-            about: true,
+            UserReference: { where: { isVerified: true } },
           },
         },
+        DriverProfile: true,
       },
     });
     return userProfile;
@@ -222,11 +211,15 @@ const getMyProfile = async (id: string) => {
       id: true,
       fullName: true,
       email: true,
-      location: true,
       image: true,
       role: true,
-      phoneNumber: true,
+      completedProfile: true,
       avgRating: true,
+      _count: {
+        select: {
+          UserReference: { where: { isVerified: true } },
+        },
+      },
       Profile: true,
     },
   });
@@ -240,12 +233,13 @@ const updateProfile = async (payload: User, imageFile: any, userId: string) => {
     select: { id: true, image: true },
   });
 
-  const result = await prisma.$transaction(async (prisma) => {
-    let image = existingUser?.image || "";
-    if (imageFile) {
-      image = (await fileUploader.uploadToDigitalOcean(imageFile)).Location;
-    }
+  let image = existingUser?.image || "";
 
+  if (imageFile) {
+    image = (await fileUploader.uploadToDigitalOcean(imageFile)).Location;
+  }
+
+  const result = await prisma.$transaction(async (prisma) => {
     const createUserProfile = await prisma.user.update({
       where: { id: userId },
       data: { ...payload, image },
@@ -345,7 +339,13 @@ const userReviews = async (id: string, userId: string) => {
       rating: true,
       message: true,
       createdAt: true,
-      sender: { select: { fullName: true, image: true, location: true } },
+      sender: {
+        select: {
+          fullName: true,
+          image: true,
+          Profile: { select: { country: true, state: true, city: true } },
+        },
+      },
     },
   });
 

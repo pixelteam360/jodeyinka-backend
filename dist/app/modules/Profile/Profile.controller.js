@@ -24,8 +24,7 @@ const createProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 const createDriverProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { photo, licence } = req.files;
-    const result = yield Profile_service_1.ProfileService.createDriverProfile(req.body, req.user.id, photo[0], licence[0]);
+    const result = yield Profile_service_1.ProfileService.createDriverProfile(req.body, req.user.id, req.file);
     (0, sendResponse_1.default)(res, {
         message: "Driver Profile Registered successfully!",
         data: result,
@@ -53,14 +52,7 @@ const updateProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 const updateDriverProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const files = req.files;
-    const photoFile = Array.isArray(files.photo) && files.photo.length > 0
-        ? files.photo[0]
-        : undefined;
-    const licenceFile = Array.isArray(files.licence) && files.licence.length > 0
-        ? files.licence[0]
-        : undefined;
-    const result = yield Profile_service_1.ProfileService.updateDriverProfile(req.body, req.user.id, photoFile, licenceFile);
+    const result = yield Profile_service_1.ProfileService.updateDriverProfile(req.body, req.user.id, req.file);
     (0, sendResponse_1.default)(res, {
         message: "Driver Profile Updated successfully!",
         data: result,

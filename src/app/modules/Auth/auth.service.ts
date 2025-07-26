@@ -13,6 +13,15 @@ const loginUser = async (payload: { email: string; password: string }) => {
     where: {
       email: payload.email,
     },
+    select: {
+      id: true,
+      verifiedEmail: true,
+      email: true,
+      password: true,
+      role: true,
+      otp: true,
+      expirationOtp: true,
+    },
   });
 
   if (!userData?.email) {
@@ -29,6 +38,59 @@ const loginUser = async (payload: { email: string; password: string }) => {
   if (!isCorrectPassword) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Password incorrect!");
   }
+  if (!userData.verifiedEmail && userData.role !== "ADMIN") {
+    // Generate a new OTP
+    const otp = Number(crypto.randomInt(1000, 9999));
+
+    // Set OTP expiration time to 10 minutes from now
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Create the email content
+
+    const html = `
+<div style="font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; padding: 40px;">
+  <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+    
+    <div style="background-color: #1CAD4D; padding: 30px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 26px;">Email verification OTP</h1>
+      <p style="margin: 8px 0 0; color: #e0f7ec; font-size: 14px;">Your One-Time Password (OTP) is below</p>
+    </div>
+    
+    <div style="padding: 30px; text-align: center;">
+      <p style="font-size: 16px; color: #333333; margin-bottom: 10px;">Use the OTP below to verify your email:</p>
+      <p style="font-size: 36px; font-weight: bold; color: #1CAD4D; margin: 20px 0;">${otp}</p>
+      <p style="font-size: 14px; color: #666666; margin: 0 0 20px;">This code will expire in <strong>10 minutes</strong>.</p>
+    </div>
+
+    <div style="padding: 0 30px 30px; text-align: center;">
+      <p style="font-size: 14px; color: #999999; margin: 0;">If you didn’t request this, you can safely ignore this email.</p>
+      <p style="font-size: 14px; color: #999999; margin: 8px 0 0;">Need help? Contact us at <a href="mailto:support@nmbull.com" style="color: #1CAD4D; text-decoration: none; font-weight: 500;">support@nmbull.com</a></p>
+    </div>
+
+    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 12px; color: #999999;">
+      Best regards,<br/>
+      <strong style="color: #1CAD4D;">Nmbull Team</strong>
+    </div>
+
+  </div>
+</div>`;
+
+    await emailSender(userData.email, html, "Email varification OTP");
+
+    await prisma.user.update({
+      where: { id: userData.id },
+      data: {
+        otp: otp,
+        expirationOtp: otpExpires,
+      },
+    });
+
+    return {
+      message: "Email verification code sended successfully",
+      verifiedEmail: userData.verifiedEmail,
+    };
+  }
+
   const accessToken = jwtHelpers.generateToken(
     {
       id: userData.id,
@@ -39,7 +101,11 @@ const loginUser = async (payload: { email: string; password: string }) => {
     config.jwt.expires_in as string
   );
 
-  return { role: userData.role, token: accessToken };
+  return {
+    role: userData.role,
+    verifiedEmail: userData.verifiedEmail,
+    token: accessToken,
+  };
 };
 
 const changePassword = async (
@@ -235,6 +301,7 @@ const verifyForgotPasswordOtp = async (payload: {
     data: {
       otp: null,
       expirationOtp: null,
+      verifiedEmail: true,
     },
   });
 

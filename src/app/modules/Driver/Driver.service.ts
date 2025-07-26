@@ -46,7 +46,11 @@ const allDrivers = async (
   const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
 
   const result = await prisma.user.findMany({
-    where: { ...whereConditons, role: "DRIVER" },
+    where: {
+      ...whereConditons,
+      role: "DRIVER",
+      DriverProfile: { hired: false },
+    },
     skip,
     orderBy:
       options.sortBy && options.sortOrder
@@ -60,13 +64,18 @@ const allDrivers = async (
       id: true,
       fullName: true,
       image: true,
-      location: true,
       avgRating: true,
-      DriverProfile: { select: { monthlyRate: true } },
+      DriverProfile: {
+        select: { monthlyRate: true, state: true, city: true, country: true },
+      },
     },
   });
   const total = await prisma.user.count({
-    where: { ...whereConditons, role: "DRIVER" },
+    where: {
+      ...whereConditons,
+      role: "DRIVER",
+      DriverProfile: { hired: false },
+    },
   });
 
   return {
@@ -86,10 +95,15 @@ const singleDriver = async (id: string) => {
       id: true,
       fullName: true,
       image: true,
-      location: true,
       avgRating: true,
       DriverProfile: {
-        select: { monthlyRate: true, about: true, Experience: true },
+        select: {
+          about: true,
+          country: true,
+          state: true,
+          city: true,
+          Experience: true,
+        },
       },
     },
   });
@@ -125,8 +139,14 @@ const getMyBookMarks = async (userId: string) => {
           fullName: true,
           image: true,
           avgRating: true,
-          location: true,
-          DriverProfile: { select: { about: true } },
+          DriverProfile: {
+            select: {
+              country: true,
+              state: true,
+              city: true,
+              monthlyRate: true,
+            },
+          },
         },
       },
     },
@@ -231,8 +251,8 @@ const myhiring = async (
 
   if (user?.role === "DRIVER") {
     whereConditons.driverId = user.id;
-  } else if (user?.role === "USER") {
-    whereConditons.userId = user.id;
+  } else {
+    whereConditons.userId = user?.id;
   }
 
   const result = await prisma.driverHire.findMany({
@@ -337,13 +357,12 @@ const acceptHiring = async (hiringId: string, userId: string) => {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Unauthorize access");
   }
 
-  const isHiried = await prisma.driverHire.findFirst({
-    where: { driverId: userId, status: { not: "ACCEPTED" } },
-    select: { id: true },
+  const isHired = await prisma.driverProfile.findFirst({
+    where: { userId, hired: true },
   });
 
-  if (isHiried) {
-    throw new ApiError(httpStatus.FORBIDDEN, "You are already hiried");
+  if (isHired) {
+    throw new ApiError(httpStatus.FORBIDDEN, "You are already hired");
   }
 
   const acceptedHiring = await prisma.driverHire.count({

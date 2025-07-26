@@ -34,6 +34,14 @@ const getUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 
         data: result,
     });
 }));
+const singleUser = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.user;
+    const result = yield user_service_1.userService.singleUser(id);
+    (0, sendResponse_1.default)(res, {
+        message: "User profile retrieved successfully",
+        data: result,
+    });
+}));
 const getMyProfile = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.user;
     const result = yield user_service_1.userService.getMyProfile(id);
@@ -58,7 +66,7 @@ const provideReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 const userReviews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_service_1.userService.userReviews(req.params.id);
+    const result = yield user_service_1.userService.userReviews(req.params.id, req.user.id);
     (0, sendResponse_1.default)(res, {
         message: "Review retrieved successfully!",
         data: result,
@@ -67,8 +75,9 @@ const userReviews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
 exports.userController = {
     createUser,
     getUsers,
+    singleUser,
     getMyProfile,
     updateProfile,
     provideReview,
-    userReviews
+    userReviews,
 };

@@ -9,32 +9,39 @@ const createProfileIntoDb = async (payload: TProfile, userId: string) => {
     where: {
       id: userId,
     },
-    select: { id: true, role: true },
+    select: { id: true, role: true, completedProfile: true },
   });
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  if (user.role !== "USER") {
-    throw new ApiError(409, "Profile already exists");
+  if (user.completedProfile) {
+    throw new ApiError(400, "Profile already created");
   }
+
+  const { reference, ...restData } = payload;
 
   const result = await prisma.$transaction(async (prisma) => {
     const profile = await prisma.profile.create({
-      data: {
-        city: payload.city,
-        userId: user.id,
-        country: payload.country,
-        state: payload.state,
-        driverCanHire: payload.driverCanHire,
-      },
+      data: { ...restData, userId: user.id },
     });
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { role: payload.role },
+      data: { completedProfile: true },
     });
+
+    await Promise.all(
+      reference.map(async (number) => {
+        await prisma.userReference.create({
+          data: {
+            phoneNumber: number,
+            userId: user.id,
+          },
+        });
+      })
+    );
 
     await prisma.adminPayment.create({
       data: {
@@ -54,14 +61,14 @@ const createProfileIntoDb = async (payload: TProfile, userId: string) => {
 const createDriverProfile = async (
   payload: TDriverProfile,
   userId: string,
-  photo: Express.Multer.File,
-  licence: Express.Multer.File
+  license: any
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       role: true,
+      completedProfile: true,
     },
   });
 
@@ -69,27 +76,38 @@ const createDriverProfile = async (
     throw new ApiError(404, "User not found");
   }
 
-  if (user.role !== "USER") {
-    throw new ApiError(409, "Profile already exists");
+  if (!license) {
+    throw new ApiError(400, "License is required");
   }
 
-  if (!photo || !licence) {
-    throw new ApiError(400, "Photo and licence are required");
+  if (user.completedProfile) {
+    throw new ApiError(400, "Profile already created");
   }
-
-  const photoUrl = (await fileUploader.uploadToDigitalOcean(photo)).Location;
-  const licenceUrl = (await fileUploader.uploadToDigitalOcean(licence))
+  const drivingLicense = (await fileUploader.uploadToDigitalOcean(license))
     .Location;
+
+  const { reference, ...restData } = payload;
 
   const result = await prisma.$transaction(async (prisma) => {
     const profile = await prisma.driverProfile.create({
-      data: {
-        ...payload,
-        photo: photoUrl,
-        drivingLicense: licenceUrl,
-        userId: user.id,
-      },
+      data: { ...restData, userId, drivingLicense },
     });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { completedProfile: true },
+    });
+
+    await Promise.all(
+      reference.map(async (number) => {
+        await prisma.userReference.create({
+          data: {
+            phoneNumber: number,
+            userId: user.id,
+          },
+        });
+      })
+    );
 
     await prisma.user.update({
       where: { id: user.id },
@@ -122,7 +140,6 @@ const myProfile = async (id: string) => {
     where: { id },
     select: { id: true, role: true },
   });
-
   if (user?.role === "DRIVER") {
     const profile = await prisma.driverProfile.findUnique({
       where: { userId: id },
@@ -137,14 +154,6 @@ const myProfile = async (id: string) => {
 
   const profile = await prisma.profile.findUnique({
     where: { userId: id },
-    select: {
-      id: true,
-      country: true,
-      state: true,
-      city: true,
-      driverCanHire: true,
-      userId: true,
-    },
   });
 
   if (!profile) {
@@ -175,15 +184,14 @@ const updateProfile = async (payload: Profile, userId: string) => {
 const updateDriverProfile = async (
   payload: Partial<TDriverProfile>,
   userId: string,
-  photo: any,
-  licence: any
+  license: any
 ) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
       role: true,
-      DriverProfile: { select: { photo: true, drivingLicense: true } },
+      DriverProfile: { select: { drivingLicense: true } },
     },
   });
 
@@ -191,24 +199,18 @@ const updateDriverProfile = async (
     throw new ApiError(404, "User not found");
   }
 
-  let photoUrl = user.DriverProfile?.photo;
+  let drivingLicense = user.DriverProfile?.drivingLicense;
 
-  if (photo) {
-    photoUrl = (await fileUploader.uploadToDigitalOcean(photo)).Location;
-  }
-
-  let licenceUrl = user.DriverProfile?.drivingLicense;
-
-  if (licence) {
-    licenceUrl = (await fileUploader.uploadToDigitalOcean(licence)).Location;
+  if (license) {
+    drivingLicense = (await fileUploader.uploadToDigitalOcean(license))
+      .Location;
   }
 
   const result = await prisma.driverProfile.update({
     where: { userId: user.id },
     data: {
       ...payload,
-      photo: photoUrl!,
-      drivingLicense: licenceUrl!,
+      drivingLicense: drivingLicense,
     },
   });
 

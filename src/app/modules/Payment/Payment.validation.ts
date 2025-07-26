@@ -1,4 +1,4 @@
-import { HiringStatus } from "@prisma/client";
+
 import { z } from "zod";
 
 const extraDriverPaymentSchema = z.object({
@@ -8,7 +8,7 @@ const extraDriverPaymentSchema = z.object({
 });
 
 const reviewPaymentSchema = z.object({
-  userId: z.string(),
+  reviewOwnerId: z.string(),
   paymentAmount: z.number().int(),
   paymentId: z.string(),
 });
