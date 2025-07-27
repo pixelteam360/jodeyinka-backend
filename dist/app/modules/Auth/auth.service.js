@@ -66,7 +66,9 @@ const loginUser = (payload) => __awaiter(void 0, void 0, void 0, function* () {
     if (!isCorrectPassword) {
         throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "Password incorrect!");
     }
-    if (!userData.verifiedEmail && userData.role !== "ADMIN") {
+    if (!userData.verifiedEmail &&
+        userData.role !== "ADMIN" &&
+        userData.role !== "SUPER_ADMIN") {
         // Generate a new OTP
         const otp = Number(crypto_1.default.randomInt(1000, 9999));
         // Set OTP expiration time to 10 minutes from now

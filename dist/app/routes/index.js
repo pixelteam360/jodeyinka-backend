@@ -10,6 +10,8 @@ const Profile_routes_1 = require("../modules/Profile/Profile.routes");
 const Experience_routes_1 = require("../modules/Experience/Experience.routes");
 const Driver_routes_1 = require("../modules/Driver/Driver.routes");
 const Payment_routes_1 = require("../modules/Payment/Payment.routes");
+const Job_routes_1 = require("../modules/Job/Job.routes");
+const Dashboard_routes_1 = require("../modules/Dashboard/Dashboard.routes");
 const router = express_1.default.Router();
 const moduleRoutes = [
     {
@@ -35,6 +37,14 @@ const moduleRoutes = [
     {
         path: "/payment",
         route: Payment_routes_1.PaymentRoutes,
+    },
+    {
+        path: "/job",
+        route: Job_routes_1.JobRoutes,
+    },
+    {
+        path: "/dashboard",
+        route: Dashboard_routes_1.DashboardRoutes,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

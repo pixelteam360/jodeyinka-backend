@@ -8,7 +8,7 @@ const extraDriverPaymentSchema = zod_1.z.object({
     paymentId: zod_1.z.string(),
 });
 const reviewPaymentSchema = zod_1.z.object({
-    userId: zod_1.z.string(),
+    reviewOwnerId: zod_1.z.string(),
     paymentAmount: zod_1.z.number().int(),
     paymentId: zod_1.z.string(),
 });

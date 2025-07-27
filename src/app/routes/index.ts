@@ -5,6 +5,8 @@ import { ProfileRoutes } from "../modules/Profile/Profile.routes";
 import { ExperienceRoutes } from "../modules/Experience/Experience.routes";
 import { DriverRoutes } from "../modules/Driver/Driver.routes";
 import { PaymentRoutes } from "../modules/Payment/Payment.routes";
+import { JobRoutes } from "../modules/Job/Job.routes";
+import { DashboardRoutes } from "../modules/Dashboard/Dashboard.routes";
 
 const router = express.Router();
 
@@ -32,6 +34,14 @@ const moduleRoutes = [
   {
     path: "/payment",
     route: PaymentRoutes,
+  },
+  {
+    path: "/job",
+    route: JobRoutes,
+  },
+  {
+    path: "/dashboard",
+    route: DashboardRoutes,
   },
 ];
 

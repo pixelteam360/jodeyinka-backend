@@ -9,9 +9,9 @@ exports.driverFilterableFields = [
 ];
 exports.driverSearchAbleFields = ["email", "fullName"];
 exports.driverHireFilterableFields = [
-    "email",
+    "status",
     "searchTerm",
     "role",
     "fullName",
 ];
-exports.driverHireSearchAbleFields = ["email", "fullName"];
+exports.driverHireSearchAbleFields = ["status", "fullName"];

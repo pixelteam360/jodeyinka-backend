@@ -160,7 +160,6 @@ const singleUser = async (id: string) => {
       id: true,
       fullName: true,
       image: true,
-      role: true,
       avgRating: true,
       Profile: { select: { about: true } },
     },

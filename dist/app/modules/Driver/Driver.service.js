@@ -32,9 +32,9 @@ const http_status_1 = __importDefault(require("http-status"));
 const allDrivers = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
     const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
-    const andCondions = [];
+    const andConditions = [];
     if (params.searchTerm) {
-        andCondions.push({
+        andConditions.push({
             OR: Driver_costant_1.driverSearchAbleFields.map((field) => ({
                 [field]: {
                     contains: params.searchTerm,
@@ -44,7 +44,7 @@ const allDrivers = (params, options) => __awaiter(void 0, void 0, void 0, functi
         });
     }
     if (Object.keys(filterData).length > 0) {
-        andCondions.push({
+        andConditions.push({
             AND: Object.keys(filterData).map((key) => ({
                 [key]: {
                     equals: filterData[key],
@@ -52,9 +52,9 @@ const allDrivers = (params, options) => __awaiter(void 0, void 0, void 0, functi
             })),
         });
     }
-    const whereConditons = { AND: andCondions };
+    const whereConditions = { AND: andConditions };
     const result = yield prisma_1.default.user.findMany({
-        where: Object.assign(Object.assign({}, whereConditons), { role: "DRIVER" }),
+        where: Object.assign(Object.assign({}, whereConditions), { role: "DRIVER", DriverProfile: { hired: false } }),
         skip,
         orderBy: options.sortBy && options.sortOrder
             ? {
@@ -74,7 +74,7 @@ const allDrivers = (params, options) => __awaiter(void 0, void 0, void 0, functi
         },
     });
     const total = yield prisma_1.default.user.count({
-        where: Object.assign(Object.assign({}, whereConditons), { role: "DRIVER" }),
+        where: Object.assign(Object.assign({}, whereConditions), { role: "DRIVER", DriverProfile: { hired: false } }),
     });
     return {
         meta: {
@@ -96,10 +96,10 @@ const singleDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
             DriverProfile: {
                 select: {
                     about: true,
-                    Experience: true,
                     country: true,
                     state: true,
                     city: true,
+                    Experience: true,
                 },
             },
         },
@@ -131,7 +131,12 @@ const getMyBookMarks = (userId) => __awaiter(void 0, void 0, void 0, function* (
                     image: true,
                     avgRating: true,
                     DriverProfile: {
-                        select: { about: true, country: true, state: true, city: true },
+                        select: {
+                            country: true,
+                            state: true,
+                            city: true,
+                            monthlyRate: true,
+                        },
                     },
                 },
             },
@@ -148,11 +153,11 @@ const hireADriver = (payload, userId) => __awaiter(void 0, void 0, void 0, funct
     if (!driver) {
         throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Driver not found");
     }
-    const alreadyHired = yield prisma_1.default.driverHire.findFirst({
-        where: { driverId: driver.id, status: "ACCEPTED" },
+    const alreadyHired = yield prisma_1.default.driverProfile.findFirst({
+        where: { userId: driver.id, hired: false },
         select: { id: true },
     });
-    if (alreadyHired) {
+    if (!alreadyHired) {
         throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Driver is already hired");
     }
     const sendedHiring = yield prisma_1.default.driverHire.findFirst({
@@ -184,9 +189,9 @@ const myhiring = (params, options, userId) => __awaiter(void 0, void 0, void 0, 
     });
     const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
-    const andCondions = [];
+    const andConditions = [];
     if (params.searchTerm) {
-        andCondions.push({
+        andConditions.push({
             OR: Driver_costant_1.driverHireSearchAbleFields.map((field) => ({
                 [field]: {
                     contains: params.searchTerm,
@@ -196,7 +201,7 @@ const myhiring = (params, options, userId) => __awaiter(void 0, void 0, void 0, 
         });
     }
     if (Object.keys(filterData).length > 0) {
-        andCondions.push({
+        andConditions.push({
             AND: Object.keys(filterData).map((key) => ({
                 [key]: {
                     equals: filterData[key],
@@ -204,17 +209,18 @@ const myhiring = (params, options, userId) => __awaiter(void 0, void 0, void 0, 
             })),
         });
     }
-    let whereConditons = {
-        AND: andCondions,
+    let whereConditions = {
+        AND: andConditions,
     };
     if ((user === null || user === void 0 ? void 0 : user.role) === "DRIVER") {
-        whereConditons.driverId = user.id;
+        whereConditions.driverId = user.id;
+        whereConditions.adminApproved = true;
     }
     else {
-        whereConditons.userId = user === null || user === void 0 ? void 0 : user.id;
+        whereConditions.userId = user === null || user === void 0 ? void 0 : user.id;
     }
     const result = yield prisma_1.default.driverHire.findMany({
-        where: whereConditons,
+        where: whereConditions,
         skip,
         orderBy: options.sortBy && options.sortOrder
             ? {
@@ -228,15 +234,27 @@ const myhiring = (params, options, userId) => __awaiter(void 0, void 0, void 0, 
             offerAmount: true,
             status: true,
             user: {
-                select: { id: true, image: true, fullName: true, avgRating: true },
+                select: {
+                    id: true,
+                    image: true,
+                    fullName: true,
+                    avgRating: true,
+                    role: true,
+                },
             },
             driver: {
-                select: { id: true, image: true, fullName: true, avgRating: true },
+                select: {
+                    id: true,
+                    image: true,
+                    fullName: true,
+                    avgRating: true,
+                    role: true,
+                },
             },
         },
     });
     const total = yield prisma_1.default.driverHire.count({
-        where: whereConditons,
+        where: whereConditions,
     });
     return {
         meta: {
@@ -302,12 +320,12 @@ const acceptHiring = (hiringId, userId) => __awaiter(void 0, void 0, void 0, fun
     if ((offer === null || offer === void 0 ? void 0 : offer.driverId) !== userId) {
         throw new ApiErrors_1.default(http_status_1.default.UNAUTHORIZED, "Unauthorize access");
     }
-    const isHiried = yield prisma_1.default.driverHire.findFirst({
-        where: { driverId: userId, status: { not: "ACCEPTED" } },
-        select: { id: true },
+    const isHired = yield prisma_1.default.driverProfile.findFirst({
+        where: { userId, hired: true },
+        select: { id: true, hired: true },
     });
-    if (isHiried) {
-        throw new ApiErrors_1.default(http_status_1.default.FORBIDDEN, "You are already hiried");
+    if (isHired) {
+        throw new ApiErrors_1.default(http_status_1.default.FORBIDDEN, "You are already hired");
     }
     const acceptedHiring = yield prisma_1.default.driverHire.count({
         where: { userId: offer.user.id, status: "ACCEPTED" },
@@ -315,20 +333,30 @@ const acceptHiring = (hiringId, userId) => __awaiter(void 0, void 0, void 0, fun
     if (((_a = offer.user.Profile) === null || _a === void 0 ? void 0 : _a.driverCanHire) <= acceptedHiring) {
         throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "User have reached her maximum driver hiring limit.");
     }
-    const result = yield prisma_1.default.driverHire.update({
-        where: { id: offer.id },
-        data: { status: "ACCEPTED" },
-        select: { id: true, status: true },
-    });
+    const result = yield prisma_1.default.$transaction((prisma) => __awaiter(void 0, void 0, void 0, function* () {
+        const driverHire = yield prisma.driverHire.update({
+            where: { id: offer.id },
+            data: { status: "ACCEPTED" },
+            select: { id: true, status: true },
+        });
+        yield prisma.driverProfile.update({
+            where: { userId },
+            data: { hired: true },
+        });
+        return driverHire;
+    }));
     return result;
 });
 const deletehiring = (id, userId) => __awaiter(void 0, void 0, void 0, function* () {
     const offer = yield prisma_1.default.driverHire.findFirst({
         where: { id },
-        select: { id: true, userId: true, driverId: true },
+        select: { id: true, userId: true, driverId: true, status: true },
     });
     if (!offer) {
         throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Data not found");
+    }
+    if (offer.status === "ACCEPTED") {
+        throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "You cannot delete accepted hiring");
     }
     if (offer.userId !== userId && offer.driverId !== userId) {
         throw new ApiErrors_1.default(http_status_1.default.UNAUTHORIZED, "Unauthorize access");

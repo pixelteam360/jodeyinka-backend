@@ -174,7 +174,6 @@ const singleUser = (id) => __awaiter(void 0, void 0, void 0, function* () {
             id: true,
             fullName: true,
             image: true,
-            role: true,
             avgRating: true,
             Profile: { select: { about: true } },
         },

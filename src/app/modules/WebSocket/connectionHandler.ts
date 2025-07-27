@@ -3,6 +3,8 @@ import { handleFetchChats } from "./eventHandlers/handleFetchChats";
 import { handleMessage } from "./eventHandlers/handleMessage";
 import { handleMessageList } from "./eventHandlers/handleMessageList";
 import { handleUnReadMessages } from "./eventHandlers/handleUnReadMessages";
+import { messageToAdmin } from "./eventHandlers/messageToAdmin";
+import { myAdminChats } from "./eventHandlers/myAdminChats";
 import { ExtendedWebSocket } from "./types";
 import { WebSocketServer } from "ws";
 
@@ -19,8 +21,14 @@ export function handleConnection(ws: ExtendedWebSocket, wss: WebSocketServer) {
         case "message":
           await handleMessage(ws, parsed);
           break;
+        case "messageToAdmin":
+          await messageToAdmin(ws, parsed);
+          break;
         case "fetchChats":
           await handleFetchChats(ws, parsed);
+          break;
+        case "myAdminChats":
+          await myAdminChats(ws, parsed);
           break;
         case "unReadMessages":
           await handleUnReadMessages(ws, parsed);

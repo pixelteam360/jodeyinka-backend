@@ -8,10 +8,10 @@ export const driverFilterableFields = [
 export const driverSearchAbleFields = ["email", "fullName"];
 
 export const driverHireFilterableFields = [
-  "email",
+  "status",
   "searchTerm",
   "role",
   "fullName",
 ];
 
-export const driverHireSearchAbleFields = ["email", "fullName"];
+export const driverHireSearchAbleFields = ["status", "fullName"];

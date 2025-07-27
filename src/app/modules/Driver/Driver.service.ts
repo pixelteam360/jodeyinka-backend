@@ -21,10 +21,10 @@ const allDrivers = async (
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = params;
 
-  const andCondions: Prisma.UserWhereInput[] = [];
+  const andConditions: Prisma.UserWhereInput[] = [];
 
   if (params.searchTerm) {
-    andCondions.push({
+    andConditions.push({
       OR: driverSearchAbleFields.map((field) => ({
         [field]: {
           contains: params.searchTerm,
@@ -35,7 +35,7 @@ const allDrivers = async (
   }
 
   if (Object.keys(filterData).length > 0) {
-    andCondions.push({
+    andConditions.push({
       AND: Object.keys(filterData).map((key) => ({
         [key]: {
           equals: (filterData as any)[key],
@@ -43,11 +43,11 @@ const allDrivers = async (
       })),
     });
   }
-  const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
+  const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
 
   const result = await prisma.user.findMany({
     where: {
-      ...whereConditons,
+      ...whereConditions,
       role: "DRIVER",
       DriverProfile: { hired: false },
     },
@@ -72,7 +72,7 @@ const allDrivers = async (
   });
   const total = await prisma.user.count({
     where: {
-      ...whereConditons,
+      ...whereConditions,
       role: "DRIVER",
       DriverProfile: { hired: false },
     },
@@ -165,12 +165,12 @@ const hireADriver = async (payload: TDriverHire, userId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Driver not found");
   }
 
-  const alreadyHired = await prisma.driverHire.findFirst({
-    where: { driverId: driver.id, status: "ACCEPTED" },
+  const alreadyHired = await prisma.driverProfile.findFirst({
+    where: { userId: driver.id, hired: false },
     select: { id: true },
   });
 
-  if (alreadyHired) {
+  if (!alreadyHired) {
     throw new ApiError(httpStatus.NOT_FOUND, "Driver is already hired");
   }
 
@@ -222,10 +222,10 @@ const myhiring = async (
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = params;
 
-  const andCondions: Prisma.DriverHireWhereInput[] = [];
+  const andConditions: Prisma.DriverHireWhereInput[] = [];
 
   if (params.searchTerm) {
-    andCondions.push({
+    andConditions.push({
       OR: driverHireSearchAbleFields.map((field) => ({
         [field]: {
           contains: params.searchTerm,
@@ -236,7 +236,7 @@ const myhiring = async (
   }
 
   if (Object.keys(filterData).length > 0) {
-    andCondions.push({
+    andConditions.push({
       AND: Object.keys(filterData).map((key) => ({
         [key]: {
           equals: (filterData as any)[key],
@@ -245,18 +245,19 @@ const myhiring = async (
     });
   }
 
-  let whereConditons: Prisma.DriverHireWhereInput = {
-    AND: andCondions,
+  let whereConditions: Prisma.DriverHireWhereInput = {
+    AND: andConditions,
   };
 
   if (user?.role === "DRIVER") {
-    whereConditons.driverId = user.id;
+    whereConditions.driverId = user.id;
+    whereConditions.adminApproved = true;
   } else {
-    whereConditons.userId = user?.id;
+    whereConditions.userId = user?.id;
   }
 
   const result = await prisma.driverHire.findMany({
-    where: whereConditons,
+    where: whereConditions,
     skip,
     orderBy:
       options.sortBy && options.sortOrder
@@ -272,16 +273,28 @@ const myhiring = async (
       offerAmount: true,
       status: true,
       user: {
-        select: { id: true, image: true, fullName: true, avgRating: true },
+        select: {
+          id: true,
+          image: true,
+          fullName: true,
+          avgRating: true,
+          role: true,
+        },
       },
       driver: {
-        select: { id: true, image: true, fullName: true, avgRating: true },
+        select: {
+          id: true,
+          image: true,
+          fullName: true,
+          avgRating: true,
+          role: true,
+        },
       },
     },
   });
 
   const total = await prisma.driverHire.count({
-    where: whereConditons,
+    where: whereConditions,
   });
 
   return {
@@ -359,6 +372,7 @@ const acceptHiring = async (hiringId: string, userId: string) => {
 
   const isHired = await prisma.driverProfile.findFirst({
     where: { userId, hired: true },
+    select: { id: true, hired: true },
   });
 
   if (isHired) {
@@ -376,10 +390,19 @@ const acceptHiring = async (hiringId: string, userId: string) => {
     );
   }
 
-  const result = await prisma.driverHire.update({
-    where: { id: offer.id },
-    data: { status: "ACCEPTED" },
-    select: { id: true, status: true },
+  const result = await prisma.$transaction(async (prisma) => {
+    const driverHire = await prisma.driverHire.update({
+      where: { id: offer.id },
+      data: { status: "ACCEPTED" },
+      select: { id: true, status: true },
+    });
+
+    await prisma.driverProfile.update({
+      where: { userId },
+      data: { hired: true },
+    });
+
+    return driverHire;
   });
 
   return result;
@@ -388,11 +411,18 @@ const acceptHiring = async (hiringId: string, userId: string) => {
 const deletehiring = async (id: string, userId: string) => {
   const offer = await prisma.driverHire.findFirst({
     where: { id },
-    select: { id: true, userId: true, driverId: true },
+    select: { id: true, userId: true, driverId: true, status: true },
   });
 
   if (!offer) {
     throw new ApiError(httpStatus.NOT_FOUND, "Data not found");
+  }
+
+  if (offer.status === "ACCEPTED") {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You cannot delete accepted hiring"
+    );
   }
 
   if (offer.userId !== userId && offer.driverId !== userId) {

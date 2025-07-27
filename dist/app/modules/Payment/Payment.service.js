@@ -37,7 +37,7 @@ const paymentForMoreDriver = (payload, userId) => __awaiter(void 0, void 0, void
     return result;
 });
 const paymentForReview = (payload, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield prisma_1.default.user.findFirst({ where: { id: payload.userId } });
+    const user = yield prisma_1.default.user.findFirst({ where: { id: payload.reviewOwnerId } });
     if (!user) {
         throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "User not found");
     }
@@ -47,7 +47,7 @@ const paymentForReview = (payload, userId) => __awaiter(void 0, void 0, void 0, 
             PaymentFor: "REVIEW",
             paymentId: payload.paymentId,
             reviewerId: userId,
-            reviewOwnerId: payload.userId,
+            reviewOwnerId: payload.reviewOwnerId,
         },
     });
     return result;

@@ -38,7 +38,11 @@ const loginUser = async (payload: { email: string; password: string }) => {
   if (!isCorrectPassword) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Password incorrect!");
   }
-  if (!userData.verifiedEmail && userData.role !== "ADMIN") {
+  if (
+    !userData.verifiedEmail &&
+    userData.role !== "ADMIN" &&
+    userData.role !== "SUPER_ADMIN"
+  ) {
     // Generate a new OTP
     const otp = Number(crypto.randomInt(1000, 9999));
 
