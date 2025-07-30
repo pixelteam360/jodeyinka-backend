@@ -66,7 +66,7 @@ const provideReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
     });
 }));
 const userReviews = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const result = yield user_service_1.userService.userReviews(req.params.id, req.user.id);
+    const result = yield user_service_1.userService.userReviews(req.params.id, req.user.id, req.user.role);
     (0, sendResponse_1.default)(res, {
         message: "Review retrieved successfully!",
         data: result,

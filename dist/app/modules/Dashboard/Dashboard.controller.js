@@ -50,9 +50,17 @@ const approveApplication = (0, catchAsync_1.default)((req, res) => __awaiter(voi
         data: result,
     });
 }));
+const overView = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Dashboard_service_1.DashboardService.overView();
+    (0, sendResponse_1.default)(res, {
+        message: "Overview retrieved successfully!",
+        data: result,
+    });
+}));
 exports.DashboardController = {
     allHiring,
     approveHiring,
     allJobApplication,
     approveApplication,
+    overView
 };

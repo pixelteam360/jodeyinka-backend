@@ -1,9 +1,6 @@
 import { z } from "zod";
 
 const ProfileValidationSchema = z.object({
-  driverCanHire: z.number().int(),
-  paymentAmount: z.number(),
-  paymentId: z.string().optional().nullable(),
   companyName: z.string(),
   fullName: z.string(),
   address: z.string(),
@@ -23,9 +20,6 @@ const ProfileValidationSchema = z.object({
 });
 
 const ProfileUpdateSchema = z.object({
-  driverCanHire: z.number().int().optional(),
-  paymentAmount: z.number().optional(),
-  paymentId: z.string().optional().nullable().optional(),
   companyName: z.string().optional(),
   fullName: z.string().optional(),
   address: z.string().optional(),

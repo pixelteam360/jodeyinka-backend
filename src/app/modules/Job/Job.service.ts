@@ -12,7 +12,6 @@ const createJobIntoDb = async (payload: TJob, userId: string) => {
     where: { userId },
     select: { driverCanHire: true },
   });
-
   const jobDriver = await prisma.job.count({
     where: { userId, hiringType: "DRIVER" },
   });
@@ -20,12 +19,18 @@ const createJobIntoDb = async (payload: TJob, userId: string) => {
     where: { userId, hiringType: "AGENT" },
   });
 
-  if (user?.driverCanHire! <= jobDriver) {
-    throw new Error("You have reached your maximum job hiring limit.");
+  if (payload.hiringType === "DRIVER" && user?.driverCanHire! <= jobDriver) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You have reached your maximum job hiring limit for driver."
+    );
   }
 
-  if (jobAgent) {
-    throw new Error("You can only create a maximum of 1 jobs post for Agent.");
+  if (payload.hiringType === "AGENT" && jobAgent) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You can only create a maximum of 1 jobs post for Agent."
+    );
   }
 
   const result = await prisma.job.create({
@@ -93,6 +98,7 @@ const getAllJobs = async (
       id: true,
       location: true,
       amount: true,
+      hiringType: true,
       user: {
         select: {
           id: true,

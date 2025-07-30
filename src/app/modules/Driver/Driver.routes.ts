@@ -16,6 +16,8 @@ router
     DriverController.hireADriver
   );
 
+router.get("/agent", auth(), DriverController.allAgent);
+
 router
   .route("/bookmark")
   .get(

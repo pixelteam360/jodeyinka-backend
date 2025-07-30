@@ -18,6 +18,7 @@ const allDrivers = async (
   params: IDriverFilterRequest,
   options: IPaginationOptions
 ) => {
+  console.log("asdg");
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = params;
 
@@ -52,6 +53,7 @@ const allDrivers = async (
       DriverProfile: { hired: false },
     },
     skip,
+    take: limit,
     orderBy:
       options.sortBy && options.sortOrder
         ? {
@@ -70,11 +72,85 @@ const allDrivers = async (
       },
     },
   });
+
   const total = await prisma.user.count({
     where: {
       ...whereConditions,
       role: "DRIVER",
       DriverProfile: { hired: false },
+    },
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
+
+const allAgent = async (
+  params: IDriverFilterRequest,
+  options: IPaginationOptions
+) => {
+  console.log("asdg");
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = params;
+
+  const andConditions: Prisma.UserWhereInput[] = [];
+
+  if (params.searchTerm) {
+    andConditions.push({
+      OR: driverSearchAbleFields.map((field) => ({
+        [field]: {
+          contains: params.searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+  const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
+
+  const result = await prisma.user.findMany({
+    where: {
+      ...whereConditions,
+      role: "AGENT",
+    },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [options.sortBy]: options.sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
+    select: {
+      id: true,
+      fullName: true,
+      image: true,
+      avgRating: true,
+      Profile: true,
+    },
+  });
+
+  const total = await prisma.user.count({
+    where: {
+      ...whereConditions,
+      role: "AGENT",
     },
   });
 
@@ -102,9 +178,11 @@ const singleDriver = async (id: string) => {
           country: true,
           state: true,
           city: true,
+          monthlyRate: true,
           Experience: true,
         },
       },
+      Profile: true,
     },
   });
 
@@ -157,21 +235,23 @@ const getMyBookMarks = async (userId: string) => {
 
 const hireADriver = async (payload: TDriverHire, userId: string) => {
   const driver = await prisma.user.findFirst({
-    where: { id: payload.driverId, role: "DRIVER" },
-    select: { id: true },
+    where: { id: payload.driverId },
+    select: { id: true, role: true },
   });
 
   if (!driver) {
     throw new ApiError(httpStatus.NOT_FOUND, "Driver not found");
   }
 
-  const alreadyHired = await prisma.driverProfile.findFirst({
-    where: { userId: driver.id, hired: false },
-    select: { id: true },
-  });
+  if (driver.role === "DRIVER") {
+    const notHired = await prisma.driverProfile.findFirst({
+      where: { userId: driver.id, hired: false },
+      select: { id: true },
+    });
 
-  if (!alreadyHired) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Driver is already hired");
+    if (!notHired) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Driver is already hired");
+    }
   }
 
   const sendedHiring = await prisma.driverHire.findFirst({
@@ -181,25 +261,64 @@ const hireADriver = async (payload: TDriverHire, userId: string) => {
 
   if (sendedHiring) {
     throw new ApiError(
-      httpStatus.NOT_FOUND,
+      httpStatus.BAD_REQUEST,
       "You have already sended a request"
     );
   }
 
   const user = await prisma.user.findFirst({
     where: { id: userId },
-    select: { id: true, Profile: { select: { driverCanHire: true } } },
+    select: {
+      id: true,
+      role: true,
+      Profile: { select: { driverCanHire: true } },
+    },
   });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.Profile === null) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User profile not found");
+  }
 
   const acceptedHiring = await prisma.driverHire.count({
-    where: { userId, status: "ACCEPTED" },
+    where: { userId, status: "ACCEPTED", driver: { role: "DRIVER" } },
   });
 
-  if (user?.Profile?.driverCanHire! <= acceptedHiring) {
+  const driverJob = await prisma.job.count({
+    where: { userId: user.id, status: "ACCEPTED", hiringType: "DRIVER" },
+  });
+
+  const totalDriverHired = acceptedHiring + driverJob;
+
+  if (
+    driver.role === "DRIVER" &&
+    user.Profile.driverCanHire <= totalDriverHired
+  ) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "You have reached your maximum driver hiring limit."
     );
+  }
+
+  if (user.role === "EMPLOYER" && driver.role === "AGENT") {
+    const job = await prisma.job.findFirst({
+      where: { userId: user.id, status: "ACCEPTED", hiringType: "AGENT" },
+      select: { id: true },
+    });
+
+    const acceptedHiring = await prisma.driverHire.count({
+      where: { userId, status: "ACCEPTED", driver: { role: "AGENT" } },
+    });
+
+    if (job || acceptedHiring) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "You have reached your maximum agent hiring limit."
+      );
+    }
   }
 
   const result = await prisma.driverHire.create({
@@ -313,27 +432,6 @@ const singleHiring = async (hiringId: string, userId: string) => {
     select: { id: true, role: true },
   });
 
-  if (user?.role === "DRIVER") {
-    const result = await prisma.driverHire.findUnique({
-      where: { id: hiringId },
-      select: {
-        id: true,
-        offerAmount: true,
-        aboutOffer: true,
-        status: true,
-        user: {
-          select: { id: true, image: true, fullName: true, avgRating: true },
-        },
-      },
-    });
-
-    if (!result) {
-      throw new ApiError(httpStatus.NOT_FOUND, "Data not found");
-    }
-
-    return result;
-  }
-
   const result = await prisma.driverHire.findUnique({
     where: { id: hiringId },
     select: {
@@ -342,6 +440,9 @@ const singleHiring = async (hiringId: string, userId: string) => {
       aboutOffer: true,
       status: true,
       driver: {
+        select: { id: true, image: true, fullName: true, avgRating: true },
+      },
+      user: {
         select: { id: true, image: true, fullName: true, avgRating: true },
       },
     },
@@ -366,16 +467,32 @@ const acceptHiring = async (hiringId: string, userId: string) => {
     },
   });
 
-  if (offer?.driverId !== userId) {
+  if (!offer) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Hiring Offer not found");
+  }
+
+  if (offer.driverId !== userId) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Unauthorize access");
   }
 
-  const isHired = await prisma.driverProfile.findFirst({
-    where: { userId, hired: true },
-    select: { id: true, hired: true },
+  if (offer.user.Profile === null) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Owner profile not found");
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: userId },
+    select: {
+      id: true,
+      role: true,
+      DriverProfile: { select: { hired: true } },
+    },
   });
 
-  if (isHired) {
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.role === "DRIVER" && user.DriverProfile?.hired === true) {
     throw new ApiError(httpStatus.FORBIDDEN, "You are already hired");
   }
 
@@ -383,10 +500,19 @@ const acceptHiring = async (hiringId: string, userId: string) => {
     where: { userId: offer.user.id, status: "ACCEPTED" },
   });
 
-  if (offer.user.Profile?.driverCanHire! <= acceptedHiring) {
+  const driverJob = await prisma.job.count({
+    where: { userId: offer.user.id, status: "ACCEPTED", hiringType: "DRIVER" },
+  });
+
+  const totalDriverHired = acceptedHiring + driverJob;
+
+  if (
+    user.role === "DRIVER" &&
+    offer.user.Profile?.driverCanHire <= totalDriverHired
+  ) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "User have reached her maximum driver hiring limit."
+      "The owner has reached their maximum driver hiring limit."
     );
   }
 
@@ -397,10 +523,12 @@ const acceptHiring = async (hiringId: string, userId: string) => {
       select: { id: true, status: true },
     });
 
-    await prisma.driverProfile.update({
-      where: { userId },
-      data: { hired: true },
-    });
+    if (user.role === "DRIVER") {
+      await prisma.driverProfile.update({
+        where: { userId },
+        data: { hired: true },
+      });
+    }
 
     return driverHire;
   });
@@ -438,6 +566,7 @@ const deletehiring = async (id: string, userId: string) => {
 
 export const DriverService = {
   allDrivers,
+  allAgent,
   singleDriver,
   hireADriver,
   bookmarkDriver,

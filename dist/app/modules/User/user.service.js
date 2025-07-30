@@ -299,12 +299,12 @@ const provideReview = (payload, senderId) => __awaiter(void 0, void 0, void 0, f
     }));
     return result;
 });
-const userReviews = (id, userId) => __awaiter(void 0, void 0, void 0, function* () {
+const userReviews = (id, userId, userRole) => __awaiter(void 0, void 0, void 0, function* () {
     const paidForReview = yield prisma_1.default.adminPayment.findFirst({
         where: { reviewerId: userId, reviewOwnerId: id },
     });
-    if (!paidForReview) {
-        throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "You have to pay to view the reivews");
+    if (!paidForReview && userRole !== "DRIVER") {
+        throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "You have to pay to view the reviews");
     }
     const result = yield prisma_1.default.userRating.findMany({
         where: { receiverId: id },

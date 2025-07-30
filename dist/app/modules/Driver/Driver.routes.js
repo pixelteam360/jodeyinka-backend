@@ -15,6 +15,7 @@ router
     .route("/")
     .get((0, auth_1.default)(), Driver_controller_1.DriverController.allDrivers)
     .post((0, auth_1.default)(client_1.UserRole.AGENT, client_1.UserRole.EMPLOYER), (0, validateRequest_1.default)(Driver_validation_1.DriverValidation.HireDriverSchema), Driver_controller_1.DriverController.hireADriver);
+router.get("/agent", (0, auth_1.default)(), Driver_controller_1.DriverController.allAgent);
 router
     .route("/bookmark")
     .get((0, auth_1.default)(client_1.UserRole.AGENT, client_1.UserRole.EMPLOYER), Driver_controller_1.DriverController.getMyBookMarks);

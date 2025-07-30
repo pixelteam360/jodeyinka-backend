@@ -181,9 +181,20 @@ const approveApplication = (id) => __awaiter(void 0, void 0, void 0, function* (
     });
     return res;
 });
+const overView = () => __awaiter(void 0, void 0, void 0, function* () {
+    const totalUsers = yield prisma_1.default.user.count();
+    const totalPayment = yield prisma_1.default.adminPayment.count();
+    const totalRevenue = yield prisma_1.default.adminPayment.aggregate({
+        _sum: {
+            amount: true,
+        },
+    });
+    return { totalUsers, totalRevenue: totalRevenue._sum.amount || 0, totalPayment };
+});
 exports.DashboardService = {
     allHiring,
     approveHiring,
     allJobApplication,
     approveApplication,
+    overView
 };

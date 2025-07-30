@@ -319,15 +319,15 @@ const provideReview = async (
   return result;
 };
 
-const userReviews = async (id: string, userId: string) => {
+const userReviews = async (id: string, userId: string, userRole: string) => {
   const paidForReview = await prisma.adminPayment.findFirst({
     where: { reviewerId: userId, reviewOwnerId: id },
   });
 
-  if (!paidForReview) {
+  if (!paidForReview && userRole !== "DRIVER") {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "You have to pay to view the reivews"
+      "You have to pay to view the reviews"
     );
   }
 

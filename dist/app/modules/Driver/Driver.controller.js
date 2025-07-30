@@ -27,6 +27,15 @@ const allDrivers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, voi
         data: result,
     });
 }));
+const allAgent = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filters = (0, pick_1.default)(req.query, user_costant_1.userFilterableFields);
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield Driver_service_1.DriverService.allAgent(filters, options);
+    (0, sendResponse_1.default)(res, {
+        message: "Agent retrieved successfully",
+        data: result,
+    });
+}));
 const singleDriver = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield Driver_service_1.DriverService.singleDriver(req.params.id);
     (0, sendResponse_1.default)(res, {
@@ -87,6 +96,7 @@ const deletehiring = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
 }));
 exports.DriverController = {
     allDrivers,
+    allAgent,
     singleDriver,
     hireADriver,
     bookmarkDriver,

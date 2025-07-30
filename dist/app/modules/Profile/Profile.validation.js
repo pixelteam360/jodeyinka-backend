@@ -3,9 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProfileValidation = void 0;
 const zod_1 = require("zod");
 const ProfileValidationSchema = zod_1.z.object({
-    driverCanHire: zod_1.z.number().int(),
-    paymentAmount: zod_1.z.number(),
-    paymentId: zod_1.z.string().optional().nullable(),
     companyName: zod_1.z.string(),
     fullName: zod_1.z.string(),
     address: zod_1.z.string(),
@@ -24,9 +21,6 @@ const ProfileValidationSchema = zod_1.z.object({
     reference: zod_1.z.array(zod_1.z.string()),
 });
 const ProfileUpdateSchema = zod_1.z.object({
-    driverCanHire: zod_1.z.number().int().optional(),
-    paymentAmount: zod_1.z.number().optional(),
-    paymentId: zod_1.z.string().optional().nullable().optional(),
     companyName: zod_1.z.string().optional(),
     fullName: zod_1.z.string().optional(),
     address: zod_1.z.string().optional(),

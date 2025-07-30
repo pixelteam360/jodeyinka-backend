@@ -58,7 +58,7 @@ const provideReview = catchAsync(async (req, res) => {
 });
 
 const userReviews = catchAsync(async (req, res) => {
-  const result = await userService.userReviews(req.params.id, req.user.id);
+  const result = await userService.userReviews(req.params.id, req.user.id, req.user.role);
   sendResponse(res, {
     message: "Review retrieved successfully!",
     data: result,

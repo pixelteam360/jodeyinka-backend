@@ -14,6 +14,16 @@ const allDrivers = catchAsync(async (req, res) => {
   });
 });
 
+const allAgent = catchAsync(async (req, res) => {
+  const filters = pick(req.query, userFilterableFields);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await DriverService.allAgent(filters, options);
+  sendResponse(res, {
+    message: "Agent retrieved successfully",
+    data: result,
+  });
+});
+
 const singleDriver = catchAsync(async (req, res) => {
   const result = await DriverService.singleDriver(req.params.id);
   sendResponse(res, {
@@ -82,6 +92,7 @@ const deletehiring = catchAsync(async (req, res) => {
 
 export const DriverController = {
   allDrivers,
+  allAgent,
   singleDriver,
   hireADriver,
   bookmarkDriver,

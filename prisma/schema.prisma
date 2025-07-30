@@ -59,9 +59,7 @@ model UserReference {
 
 model Profile {
   id                      String   @id @default(auto()) @map("_id") @db.ObjectId
-  driverCanHire           Int
-  paymentAmount           Float
-  paymentId               String?
+  driverCanHire           Int      @default(0)
   companyName             String
   fullName                String
   address                 String
@@ -213,6 +211,24 @@ model BookMarkDriver {
 
   @@map("BookMark-Driver")
 }
+
+// model Payment {
+//   id              String      @id @default(auto()) @map("_id") @db.ObjectId
+//   amount          Float
+//   paymentIntentId String
+//   paymentType     PaymentFor 
+//   createdAt       DateTime    @default(now())
+//   updatedAt       DateTime    @updatedAt
+//   sender          User        @relation("PaymentSender", fields: [senderId], references: [id])
+//   senderId        String      @db.ObjectId
+//   receiver        User        @relation("PaymentReceiver", fields: [receiverId], references: [id])
+//   receiverId      String      @db.ObjectId
+//   unitPayment     UnitPayment @relation(fields: [unitPaymentId], references: [id])
+//   unitPaymentId   String      @unique @db.ObjectId
+
+//   @@map("Payments")
+// }
+
 
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
