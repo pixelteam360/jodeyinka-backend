@@ -195,10 +195,10 @@ const singleDriver = async (id: string) => {
 
 const bookmarkDriver = async (driverId: string, userId: string) => {
   const driver = await prisma.user.findFirst({
-    where: { id: driverId, role: "DRIVER" },
+    where: { id: driverId },
   });
   if (!driver) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Driver not found");
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
   const result = await prisma.bookMarkDriver.create({
@@ -225,6 +225,7 @@ const getMyBookMarks = async (userId: string) => {
               monthlyRate: true,
             },
           },
+          Profile: true,
         },
       },
     },
@@ -407,6 +408,8 @@ const myhiring = async (
           fullName: true,
           avgRating: true,
           role: true,
+          Profile: { select: { address: true } },
+          DriverProfile: { select: { address: true } },
         },
       },
     },

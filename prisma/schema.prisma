@@ -42,6 +42,8 @@ model User {
   UserReference      UserReference[]
   Job                Job[]
   JobApplication     JobApplication[]
+  senderPayment      Payment[]        @relation("PaymentSender")
+  receiverPayment    Payment[]        @relation("PaymentReceiver")
 
   @@map("Users")
 }
@@ -154,17 +156,18 @@ model AdminPayment {
 }
 
 model DriverHire {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
-  offerAmount   Float
-  aboutOffer    String
-  adminApproved Boolean      @default(false)
-  status        HiringStatus @default(PENDING)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  userId        String       @db.ObjectId
-  driverId      String       @db.ObjectId
-  user          User         @relation("hiringSender", fields: [userId], references: [id])
-  driver        User         @relation("hiringReceiver", fields: [driverId], references: [id])
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  offerAmount    Float
+  aboutOffer     String
+  adminApproved  Boolean          @default(false)
+  status         HiringStatus     @default(PENDING)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  userId         String           @db.ObjectId
+  driverId       String           @db.ObjectId
+  user           User             @relation("hiringSender", fields: [userId], references: [id])
+  driver         User             @relation("hiringReceiver", fields: [driverId], references: [id])
+  monthlyPayment monthlyPayment[]
 
   @@map("Driver-Hire")
 }
@@ -185,17 +188,18 @@ model Job {
 }
 
 model JobApplication {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
-  amount        Float
-  about         String
-  adminApproved Boolean      @default(false)
-  status        HiringStatus @default(PENDING)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  userId        String       @db.ObjectId
-  user          User         @relation(fields: [userId], references: [id])
-  jobId         String       @db.ObjectId
-  job           Job          @relation(fields: [jobId], references: [id])
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  amount         Float
+  about          String
+  adminApproved  Boolean          @default(false)
+  status         HiringStatus     @default(PENDING)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  userId         String           @db.ObjectId
+  user           User             @relation(fields: [userId], references: [id])
+  jobId          String           @db.ObjectId
+  job            Job              @relation(fields: [jobId], references: [id])
+  monthlyPayment monthlyPayment[]
 
   @@map("Job-Application")
 }
@@ -212,23 +216,36 @@ model BookMarkDriver {
   @@map("BookMark-Driver")
 }
 
-// model Payment {
-//   id              String      @id @default(auto()) @map("_id") @db.ObjectId
-//   amount          Float
-//   paymentIntentId String
-//   paymentType     PaymentFor 
-//   createdAt       DateTime    @default(now())
-//   updatedAt       DateTime    @updatedAt
-//   sender          User        @relation("PaymentSender", fields: [senderId], references: [id])
-//   senderId        String      @db.ObjectId
-//   receiver        User        @relation("PaymentReceiver", fields: [receiverId], references: [id])
-//   receiverId      String      @db.ObjectId
-//   unitPayment     UnitPayment @relation(fields: [unitPaymentId], references: [id])
-//   unitPaymentId   String      @unique @db.ObjectId
+model monthlyPayment {
+  id               String          @id @default(auto()) @map("_id") @db.ObjectId
+  date             DateTime
+  status           PaymentStatus   @default(UNPAID)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  JobApplication   JobApplication? @relation(fields: [jobApplicationId], references: [id])
+  jobApplicationId String?         @db.ObjectId
+  DriverHire       DriverHire?     @relation(fields: [driverHireId], references: [id])
+  driverHireId     String?         @db.ObjectId
+  Payment          Payment?
 
-//   @@map("Payments")
-// }
+  @@map("Unit-Payment")
+}
 
+model Payment {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  amount           Float
+  paymentIntentId  String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  sender           User           @relation("PaymentSender", fields: [senderId], references: [id])
+  senderId         String         @db.ObjectId
+  receiver         User           @relation("PaymentReceiver", fields: [receiverId], references: [id])
+  receiverId       String         @db.ObjectId
+  monthlyPayment   monthlyPayment @relation(fields: [monthlyPaymentId], references: [id])
+  monthlyPaymentId String         @unique @db.ObjectId
+
+  @@map("Payments")
+}
 
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -289,4 +306,9 @@ enum JobStatus {
 enum HiringType {
   DRIVER
   AGENT
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
 }

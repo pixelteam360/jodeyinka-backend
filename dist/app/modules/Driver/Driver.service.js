@@ -171,10 +171,10 @@ const singleDriver = (id) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const bookmarkDriver = (driverId, userId) => __awaiter(void 0, void 0, void 0, function* () {
     const driver = yield prisma_1.default.user.findFirst({
-        where: { id: driverId, role: "DRIVER" },
+        where: { id: driverId },
     });
     if (!driver) {
-        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Driver not found");
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "User not found");
     }
     const result = yield prisma_1.default.bookMarkDriver.create({
         data: { driverId, userId },
@@ -198,6 +198,7 @@ const getMyBookMarks = (userId) => __awaiter(void 0, void 0, void 0, function* (
                             monthlyRate: true,
                         },
                     },
+                    Profile: true,
                 },
             },
         },
@@ -337,6 +338,8 @@ const myhiring = (params, options, userId) => __awaiter(void 0, void 0, void 0, 
                     fullName: true,
                     avgRating: true,
                     role: true,
+                    Profile: { select: { address: true } },
+                    DriverProfile: { select: { address: true } },
                 },
             },
         },

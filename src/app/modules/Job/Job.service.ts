@@ -344,6 +344,29 @@ const deleteApplication = async (applicationId: string, userId: string) => {
   return { message: "Application Deleted successfully" };
 };
 
+const myAppliedJobs = async (userId: string) => {
+  const res = await prisma.jobApplication.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      status: true,
+      amount: true,
+      about: true,
+      job: {
+        select: {
+          hiringType: true,
+          location: true,
+          amount: true,
+          status: true,
+          user: { select: { fullName: true, image: true } },
+        },
+      },
+    },
+  });
+
+  return res;
+};
+
 export const JobService = {
   createJobIntoDb,
   myJobs,
@@ -354,4 +377,5 @@ export const JobService = {
   jobApplications,
   acceptApplication,
   deleteApplication,
+  myAppliedJobs,
 };

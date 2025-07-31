@@ -16,6 +16,7 @@ router
     .get((0, auth_1.default)(), Job_controller_1.JobController.getAllJobs)
     .post((0, auth_1.default)(client_1.UserRole.EMPLOYER, client_1.UserRole.AGENT), (0, validateRequest_1.default)(Job_validation_1.JobValidation.JobValidationSchema), Job_controller_1.JobController.createJob);
 router.get("/my", (0, auth_1.default)(client_1.UserRole.EMPLOYER, client_1.UserRole.AGENT), Job_controller_1.JobController.myJobs);
+router.get("/my-applied", (0, auth_1.default)(client_1.UserRole.DRIVER), Job_controller_1.JobController.myAppliedJobs);
 router
     .route("/:id")
     .get((0, auth_1.default)(), Job_controller_1.JobController.singleJob)

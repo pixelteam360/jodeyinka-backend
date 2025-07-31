@@ -21,7 +21,7 @@ router.get("/agent", auth(), DriverController.allAgent);
 router
   .route("/bookmark")
   .get(
-    auth(UserRole.AGENT, UserRole.EMPLOYER),
+    auth(),
     DriverController.getMyBookMarks
   );
 
@@ -38,7 +38,7 @@ router
 router
   .route("/bookmark/:id")
   .post(
-    auth(UserRole.AGENT, UserRole.EMPLOYER),
+    auth(),
     DriverController.bookmarkDriver
   );
 

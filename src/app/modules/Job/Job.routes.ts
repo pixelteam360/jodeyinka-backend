@@ -22,6 +22,8 @@ router.get(
   JobController.myJobs
 );
 
+router.get("/my-applied", auth(UserRole.DRIVER), JobController.myAppliedJobs);
+
 router
   .route("/:id")
   .get(auth(), JobController.singleJob)

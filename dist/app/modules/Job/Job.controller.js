@@ -83,6 +83,13 @@ const deleteApplication = (0, catchAsync_1.default)((req, res) => __awaiter(void
         data: result,
     });
 }));
+const myAppliedJobs = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Job_service_1.JobService.myAppliedJobs(req.user.id);
+    (0, sendResponse_1.default)(res, {
+        message: "Applications deleted successfully",
+        data: result,
+    });
+}));
 exports.JobController = {
     createJob,
     myJobs,
@@ -92,5 +99,6 @@ exports.JobController = {
     applyForJob,
     jobApplications,
     acceptApplication,
-    deleteApplication
+    deleteApplication,
+    myAppliedJobs,
 };

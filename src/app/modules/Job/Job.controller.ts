@@ -87,6 +87,14 @@ const deleteApplication = catchAsync(async (req, res) => {
   });
 });
 
+const myAppliedJobs = catchAsync(async (req, res) => {
+  const result = await JobService.myAppliedJobs(req.user.id);
+  sendResponse(res, {
+    message: "Applications deleted successfully",
+    data: result,
+  });
+});
+
 export const JobController = {
   createJob,
   myJobs,
@@ -96,5 +104,6 @@ export const JobController = {
   applyForJob,
   jobApplications,
   acceptApplication,
-  deleteApplication
+  deleteApplication,
+  myAppliedJobs,
 };

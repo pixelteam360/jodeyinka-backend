@@ -278,6 +278,27 @@ const deleteApplication = (applicationId, userId) => __awaiter(void 0, void 0, v
     });
     return { message: "Application Deleted successfully" };
 });
+const myAppliedJobs = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const res = yield prisma_1.default.jobApplication.findMany({
+        where: { userId },
+        select: {
+            id: true,
+            status: true,
+            amount: true,
+            about: true,
+            job: {
+                select: {
+                    hiringType: true,
+                    location: true,
+                    amount: true,
+                    status: true,
+                    user: { select: { fullName: true, image: true } },
+                },
+            },
+        },
+    });
+    return res;
+});
 exports.JobService = {
     createJobIntoDb,
     myJobs,
@@ -288,4 +309,5 @@ exports.JobService = {
     jobApplications,
     acceptApplication,
     deleteApplication,
+    myAppliedJobs,
 };

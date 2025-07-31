@@ -18,7 +18,7 @@ router
 router.get("/agent", (0, auth_1.default)(), Driver_controller_1.DriverController.allAgent);
 router
     .route("/bookmark")
-    .get((0, auth_1.default)(client_1.UserRole.AGENT, client_1.UserRole.EMPLOYER), Driver_controller_1.DriverController.getMyBookMarks);
+    .get((0, auth_1.default)(), Driver_controller_1.DriverController.getMyBookMarks);
 router.route("/my-hiring").get((0, auth_1.default)(), Driver_controller_1.DriverController.myhiring);
 router.route("/:id").get((0, auth_1.default)(), Driver_controller_1.DriverController.singleDriver);
 router
@@ -28,5 +28,5 @@ router
     .delete((0, auth_1.default)(client_1.UserRole.DRIVER), Driver_controller_1.DriverController.deletehiring);
 router
     .route("/bookmark/:id")
-    .post((0, auth_1.default)(client_1.UserRole.AGENT, client_1.UserRole.EMPLOYER), Driver_controller_1.DriverController.bookmarkDriver);
+    .post((0, auth_1.default)(), Driver_controller_1.DriverController.bookmarkDriver);
 exports.DriverRoutes = router;
