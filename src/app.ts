@@ -6,12 +6,10 @@ import cookieParser from "cookie-parser";
 import GlobalErrorHandler from "./app/middlewares/globalErrorHandler";
 import router from "./app/routes";
 
-
-
 const app: Application = express();
 export const corsOptions = {
-  origin: ["http://localhost:3001", "http://localhost:3000"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: ["http://localhost:3001", "http://localhost:3000", "https://pepperoniiiiii-dashboard.vercel.app"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
@@ -26,7 +24,7 @@ app.use(express.static("public"));
 // Route handler for root endpoint
 app.get("/", (req: Request, res: Response) => {
   res.send({
-    success:true,
+    success: true,
     statusCode: httpStatus.OK,
     message: "The server is running!",
   });

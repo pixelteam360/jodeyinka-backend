@@ -187,6 +187,7 @@ const getMyBookMarks = (userId) => __awaiter(void 0, void 0, void 0, function* (
         select: {
             driver: {
                 select: {
+                    id: true,
                     fullName: true,
                     image: true,
                     avgRating: true,
@@ -374,6 +375,7 @@ const singleHiring = (hiringId, userId) => __awaiter(void 0, void 0, void 0, fun
             user: {
                 select: { id: true, image: true, fullName: true, avgRating: true },
             },
+            monthlyPayment: true,
         },
     });
     if (!result) {
@@ -439,6 +441,9 @@ const acceptHiring = (hiringId, userId) => __awaiter(void 0, void 0, void 0, fun
                 data: { hired: true },
             });
         }
+        yield prisma.monthlyPayment.create({
+            data: { date: new Date(), driverHireId: driverHire.id },
+        });
         return driverHire;
     }));
     return result;

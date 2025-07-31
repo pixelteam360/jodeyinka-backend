@@ -32,7 +32,9 @@ const paymentForReview = async (
   payload: { paymentAmount: number; paymentId: string; reviewOwnerId: string },
   userId: string
 ) => {
-  const user = await prisma.user.findFirst({ where: { id: payload.reviewOwnerId } });
+  const user = await prisma.user.findFirst({
+    where: { id: payload.reviewOwnerId },
+  });
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -51,7 +53,16 @@ const paymentForReview = async (
   return result;
 };
 
+const getAppPayment = async () => {
+  const res = await prisma.adminPayment.findMany({
+    take: 10,
+    orderBy: { createdAt: "desc" },
+  });
+  return res;
+};
+
 export const PaymentService = {
   paymentForMoreDriver,
   paymentForReview,
+  getAppPayment,
 };

@@ -20,7 +20,7 @@ const paymentForMoreDriver = (0, catchAsync_1.default)((req, res) => __awaiter(v
     console.log(req.body);
     const result = yield Payment_service_1.PaymentService.paymentForMoreDriver(req.body, req.user.id);
     (0, sendResponse_1.default)(res, {
-        message: "Payment successfull",
+        message: "Payment retrieved successfully",
         data: result,
     });
 }));
@@ -28,11 +28,20 @@ const paymentForReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 
     console.log(req.body);
     const result = yield Payment_service_1.PaymentService.paymentForReview(req.body, req.user.id);
     (0, sendResponse_1.default)(res, {
-        message: "Payment successfull",
+        message: "Payment retrieved successfully",
+        data: result,
+    });
+}));
+const getAppPayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log(req.body);
+    const result = yield Payment_service_1.PaymentService.getAppPayment();
+    (0, sendResponse_1.default)(res, {
+        message: "Payment retrieved successfully",
         data: result,
     });
 }));
 exports.PaymentController = {
     paymentForMoreDriver,
     paymentForReview,
+    getAppPayment
 };

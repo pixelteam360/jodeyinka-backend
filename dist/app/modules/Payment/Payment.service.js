@@ -37,7 +37,9 @@ const paymentForMoreDriver = (payload, userId) => __awaiter(void 0, void 0, void
     return result;
 });
 const paymentForReview = (payload, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield prisma_1.default.user.findFirst({ where: { id: payload.reviewOwnerId } });
+    const user = yield prisma_1.default.user.findFirst({
+        where: { id: payload.reviewOwnerId },
+    });
     if (!user) {
         throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "User not found");
     }
@@ -52,7 +54,15 @@ const paymentForReview = (payload, userId) => __awaiter(void 0, void 0, void 0, 
     });
     return result;
 });
+const getAppPayment = () => __awaiter(void 0, void 0, void 0, function* () {
+    const res = yield prisma_1.default.adminPayment.findMany({
+        take: 10,
+        orderBy: { createdAt: "desc" },
+    });
+    return res;
+});
 exports.PaymentService = {
     paymentForMoreDriver,
     paymentForReview,
+    getAppPayment,
 };

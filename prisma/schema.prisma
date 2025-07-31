@@ -15,6 +15,7 @@ model User {
   image              String?          @default("")
   reviews            Int?             @default(0)
   avgRating          Int?             @default(0)
+  stripeAccountId    String?          @default("")
   completedProfile   Boolean?         @default(false)
   role               UserRole
   lat                Float?           @default(0)

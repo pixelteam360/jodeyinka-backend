@@ -43,7 +43,7 @@ const hireADriver = catchAsync(async (req, res) => {
 const bookmarkDriver = catchAsync(async (req, res) => {
   const result = await DriverService.bookmarkDriver(req.params.id, req.user.id);
   sendResponse(res, {
-    message: "Driver bookmarked successfully!",
+    message: "Bookmarked successfully!",
     data: result,
   });
 });

@@ -1,8 +1,12 @@
 import { Server } from "http";
 import config from "./config";
-
+import cron from "node-cron";
 import app from "./app";
 import { setupWebSocket } from "./app/modules/WebSocket";
+import {
+  monthlyDriverPay,
+  monthlyJobPay,
+} from "./app/modules/Dashboard/Dashboard.service";
 
 let server: Server;
 
@@ -12,6 +16,11 @@ async function startServer() {
   });
   setupWebSocket(server);
 }
+
+cron.schedule("0 0 1 * *", async () => {
+  await monthlyJobPay();
+  await monthlyDriverPay();
+});
 
 async function main() {
   await startServer();

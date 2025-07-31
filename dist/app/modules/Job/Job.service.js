@@ -56,6 +56,7 @@ const myJobs = (userId) => __awaiter(void 0, void 0, void 0, function* () {
         where: {
             userId,
         },
+        include: { user: { select: { fullName: true } } },
     });
     return driverProfile;
 });
@@ -135,6 +136,15 @@ const singleJob = (id) => __awaiter(void 0, void 0, void 0, function* () {
                     image: true,
                     avgRating: true,
                     Profile: { select: { about: true } },
+                },
+            },
+            JobApplication: {
+                where: { status: "ACCEPTED" },
+                select: {
+                    amount: true,
+                    about: true,
+                    status: true,
+                    monthlyPayment: true,
                 },
             },
         },
@@ -255,6 +265,9 @@ const acceptApplication = (applicationId, userId) => __awaiter(void 0, void 0, v
                 data: { hired: true },
             });
         }
+        yield prisma.monthlyPayment.create({
+            data: { date: new Date(), jobApplicationId: jobApplication.id },
+        });
         return jobApplication;
     }));
     return result;

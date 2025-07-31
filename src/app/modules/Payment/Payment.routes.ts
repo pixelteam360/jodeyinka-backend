@@ -8,6 +8,13 @@ import { PaymentValidation } from "./Payment.validation";
 const router = express.Router();
 
 router
+  .route("/")
+  .get(
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    PaymentController.getAppPayment
+  );
+
+router
   .route("/extra-driver")
   .post(
     auth(),

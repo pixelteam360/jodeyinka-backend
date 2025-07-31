@@ -57,10 +57,18 @@ const overView = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 
         data: result,
     });
 }));
+const revenueChart = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Dashboard_service_1.DashboardService.revenueChart();
+    (0, sendResponse_1.default)(res, {
+        message: "Revenue Chart retrieved successfully!",
+        data: result,
+    });
+}));
 exports.DashboardController = {
     allHiring,
     approveHiring,
     allJobApplication,
     approveApplication,
-    overView
+    overView,
+    revenueChart,
 };

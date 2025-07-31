@@ -58,9 +58,31 @@ const provideReview = catchAsync(async (req, res) => {
 });
 
 const userReviews = catchAsync(async (req, res) => {
-  const result = await userService.userReviews(req.params.id, req.user.id, req.user.role);
+  const result = await userService.userReviews(
+    req.params.id,
+    req.user.id,
+    req.user.role
+  );
   sendResponse(res, {
     message: "Review retrieved successfully!",
+    data: result,
+  });
+});
+
+const blockUser = catchAsync(async (req, res) => {
+  const result = await userService.blockUser(req.params.id);
+  sendResponse(res, {
+    message: "User is blocked successfully",
+    data: result,
+  });
+});
+
+const pendingReference = catchAsync(async (req, res) => {
+  const filters = pick(req.query, userFilterableFields);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await userService.pendingReference(filters, options);
+  sendResponse(res, {
+    message: "Pending User successfully",
     data: result,
   });
 });
@@ -73,4 +95,6 @@ export const userController = {
   updateProfile,
   provideReview,
   userReviews,
+  blockUser,
+  pendingReference
 };

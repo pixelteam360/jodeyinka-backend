@@ -122,6 +122,7 @@ const getUsersFromDb = async (
   const result = await prisma.user.findMany({
     where: { ...whereConditons, NOT: { role: "SUPER_ADMIN" } },
     skip,
+    take: limit,
     orderBy:
       options.sortBy && options.sortOrder
         ? {
@@ -135,6 +136,10 @@ const getUsersFromDb = async (
       fullName: true,
       email: true,
       role: true,
+      avgRating: true,
+      isDeleted: true,
+      Profile: true,
+      DriverProfile: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -358,6 +363,102 @@ const userReviews = async (id: string, userId: string, userRole: string) => {
   return { groupedRating, result };
 };
 
+const blockUser = async (userId: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id: userId },
+    select: { id: true, isDeleted: true },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { isDeleted: !user.isDeleted },
+  });
+
+  return { message: "User is blocked successfully" };
+};
+
+const pendingReference = async (
+  params: IUserFilterRequest,
+  options: IPaginationOptions
+) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = params;
+
+  const andCondions: Prisma.UserWhereInput[] = [];
+
+  if (params.searchTerm) {
+    andCondions.push({
+      OR: userSearchAbleFields.map((field) => ({
+        [field]: {
+          contains: params.searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andCondions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+  const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
+
+  const result = await prisma.user.findMany({
+    where: {
+      ...whereConditons,
+      NOT: { role: "SUPER_ADMIN" },
+      UserReference: {
+        some: {
+          isVerified: false,
+        },
+      },
+    },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [options.sortBy]: options.sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+      avgRating: true,
+      isDeleted: true,
+      Profile: true,
+      DriverProfile: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  const total = await prisma.user.count({
+    where: { ...whereConditons, NOT: { role: "SUPER_ADMIN" } },
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
+
 export const userService = {
   createUserIntoDb,
   getUsersFromDb,
@@ -366,4 +467,6 @@ export const userService = {
   provideReview,
   userReviews,
   singleUser,
+  blockUser,
+  pendingReference
 };

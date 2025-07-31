@@ -23,13 +23,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DashboardService = void 0;
+exports.DashboardService = exports.monthlyDriverPay = exports.monthlyJobPay = void 0;
 const prisma_1 = __importDefault(require("../../../shared/prisma"));
 const ApiErrors_1 = __importDefault(require("../../../errors/ApiErrors"));
 const paginationHelper_1 = require("../../../helpars/paginationHelper");
 const Driver_costant_1 = require("../Driver/Driver.costant");
 const Dashboard_costant_1 = require("./Dashboard.costant");
 const http_status_1 = __importDefault(require("http-status"));
+const date_fns_1 = require("date-fns");
 const allHiring = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
     const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
@@ -154,6 +155,7 @@ const allJobApplication = (params, options) => __awaiter(void 0, void 0, void 0,
             : {
                 adminApproved: "asc",
             },
+        include: { user: { select: { fullName: true } } },
     });
     const total = yield prisma_1.default.jobApplication.count({
         where: whereConditions,
@@ -189,12 +191,124 @@ const overView = () => __awaiter(void 0, void 0, void 0, function* () {
             amount: true,
         },
     });
-    return { totalUsers, totalRevenue: totalRevenue._sum.amount || 0, totalPayment };
+    return {
+        totalUsers,
+        totalRevenue: totalRevenue._sum.amount || 0,
+        totalPayment,
+    };
 });
+const revenueChart = () => __awaiter(void 0, void 0, void 0, function* () {
+    const sixMonthsAgo = (0, date_fns_1.startOfMonth)((0, date_fns_1.subMonths)(new Date(), 5));
+    const purchases = yield prisma_1.default.adminPayment.findMany({
+        where: {
+            createdAt: {
+                gte: sixMonthsAgo,
+            },
+        },
+        select: {
+            createdAt: true,
+            amount: true,
+        },
+    });
+    const monthlyRevenueMap = {};
+    for (const purchase of purchases) {
+        const key = (0, date_fns_1.format)(purchase.createdAt, "yyyy-MM");
+        monthlyRevenueMap[key] = (monthlyRevenueMap[key] || 0) + purchase.amount;
+    }
+    const chartData = Array.from({ length: 6 }).map((_, index) => {
+        const date = (0, date_fns_1.subMonths)(new Date(), 5 - index);
+        const key = (0, date_fns_1.format)(date, "yyyy-MM");
+        const monthName = (0, date_fns_1.format)(date, "MMMM");
+        return {
+            month: monthName,
+            totalRevenue: Number((monthlyRevenueMap[key] || 0).toFixed(2)),
+        };
+    });
+    return chartData;
+});
+const monthlyJobPay = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const jobs = yield prisma_1.default.job.findMany({
+            where: { status: "ACCEPTED" },
+            select: {
+                JobApplication: {
+                    select: { id: true },
+                },
+            },
+        });
+        const paymentsToCreate = [];
+        for (const job of jobs) {
+            for (const application of job.JobApplication) {
+                const alreadyPaid = yield prisma_1.default.monthlyPayment.findFirst({
+                    where: {
+                        jobApplicationId: application.id,
+                        date: {
+                            gte: currentMonthStart,
+                            lt: new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 1),
+                        },
+                    },
+                });
+                if (!alreadyPaid) {
+                    paymentsToCreate.push({
+                        date: new Date(),
+                        jobApplicationId: application.id,
+                    });
+                }
+            }
+        }
+        if (paymentsToCreate.length > 0) {
+            yield prisma_1.default.$transaction(paymentsToCreate.map((data) => prisma_1.default.monthlyPayment.create({ data })));
+        }
+        console.log(`${paymentsToCreate.length} monthly job payments created.`);
+    }
+    catch (error) {
+        console.error("Error in monthly job payments:", error);
+    }
+});
+exports.monthlyJobPay = monthlyJobPay;
+const monthlyDriverPay = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        const hires = yield prisma_1.default.driverHire.findMany({
+            where: { status: "ACCEPTED" },
+            select: {
+                id: true,
+            },
+        });
+        const paymentsToCreate = [];
+        for (const hire of hires) {
+            const alreadyPaid = yield prisma_1.default.monthlyPayment.findFirst({
+                where: {
+                    driverHireId: hire.id,
+                    date: {
+                        gte: currentMonthStart,
+                        lt: new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 1),
+                    },
+                },
+            });
+            if (!alreadyPaid) {
+                paymentsToCreate.push({
+                    date: new Date(),
+                    driverHireId: hire.id,
+                });
+            }
+        }
+        if (paymentsToCreate.length > 0) {
+            yield prisma_1.default.$transaction(paymentsToCreate.map((data) => prisma_1.default.monthlyPayment.create({ data })));
+        }
+        console.log(`${paymentsToCreate.length} monthly driver payments created.`);
+    }
+    catch (error) {
+        console.error("Error in monthly driver payments:", error);
+    }
+});
+exports.monthlyDriverPay = monthlyDriverPay;
 exports.DashboardService = {
     allHiring,
     approveHiring,
     allJobApplication,
     approveApplication,
-    overView
+    overView,
+    revenueChart,
 };

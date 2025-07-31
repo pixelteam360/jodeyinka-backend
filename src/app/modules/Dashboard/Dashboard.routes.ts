@@ -23,6 +23,12 @@ router.get(
   DashboardController.overView
 );
 
+router.get(
+  "/revenue-chart",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  DashboardController.revenueChart
+);
+
 router
   .route("/hiring-approve/:id")
   .patch(

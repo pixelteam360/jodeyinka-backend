@@ -9,12 +9,16 @@ const validateRequest_1 = __importDefault(require("../../middlewares/validateReq
 const user_validation_1 = require("./user.validation");
 const user_controller_1 = require("./user.controller");
 const auth_1 = __importDefault(require("../../middlewares/auth"));
+const client_1 = require("@prisma/client");
 const fileUploader_1 = require("../../../helpars/fileUploader");
 const router = express_1.default.Router();
 router
     .route("/")
     .get(user_controller_1.userController.getUsers)
     .post((0, validateRequest_1.default)(user_validation_1.UserValidation.CreateUserValidationSchema), user_controller_1.userController.createUser);
+router
+    .route("/pending")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN), user_controller_1.userController.pendingReference);
 router
     .route("/profile")
     .get((0, auth_1.default)(), user_controller_1.userController.getMyProfile)
@@ -26,5 +30,8 @@ router
     .route("/review")
     .post((0, auth_1.default)(), (0, validateRequest_1.default)(user_validation_1.UserValidation.RatingSchema), user_controller_1.userController.provideReview);
 router.get("/review/:id", (0, auth_1.default)(), user_controller_1.userController.userReviews);
-router.route("/:id").get((0, auth_1.default)(), user_controller_1.userController.singleUser);
+router
+    .route("/:id")
+    .get((0, auth_1.default)(), user_controller_1.userController.singleUser)
+    .delete((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN), user_controller_1.userController.blockUser);
 exports.UserRoutes = router;

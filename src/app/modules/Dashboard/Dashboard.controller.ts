@@ -48,10 +48,19 @@ const overView = catchAsync(async (req, res) => {
   });
 });
 
+const revenueChart = catchAsync(async (req, res) => {
+  const result = await DashboardService.revenueChart();
+  sendResponse(res, {
+    message: "Revenue Chart retrieved successfully!",
+    data: result,
+  });
+});
+
 export const DashboardController = {
   allHiring,
   approveHiring,
   allJobApplication,
   approveApplication,
-  overView
+  overView,
+  revenueChart,
 };

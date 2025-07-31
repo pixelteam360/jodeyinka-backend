@@ -139,6 +139,7 @@ const getUsersFromDb = (params, options) => __awaiter(void 0, void 0, void 0, fu
     const result = yield prisma_1.default.user.findMany({
         where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" } }),
         skip,
+        take: limit,
         orderBy: options.sortBy && options.sortOrder
             ? {
                 [options.sortBy]: options.sortOrder,
@@ -151,6 +152,10 @@ const getUsersFromDb = (params, options) => __awaiter(void 0, void 0, void 0, fu
             fullName: true,
             email: true,
             role: true,
+            avgRating: true,
+            isDeleted: true,
+            Profile: true,
+            DriverProfile: true,
             createdAt: true,
             updatedAt: true,
         },
@@ -330,6 +335,84 @@ const userReviews = (id, userId, userRole) => __awaiter(void 0, void 0, void 0, 
     });
     return { groupedRating, result };
 });
+const blockUser = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield prisma_1.default.user.findFirst({
+        where: { id: userId },
+        select: { id: true, isDeleted: true },
+    });
+    if (!user) {
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "User not found");
+    }
+    yield prisma_1.default.user.update({
+        where: { id: user.id },
+        data: { isDeleted: !user.isDeleted },
+    });
+    return { message: "User is blocked successfully" };
+});
+const pendingReference = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
+    const andCondions = [];
+    if (params.searchTerm) {
+        andCondions.push({
+            OR: user_costant_1.userSearchAbleFields.map((field) => ({
+                [field]: {
+                    contains: params.searchTerm,
+                    mode: "insensitive",
+                },
+            })),
+        });
+    }
+    if (Object.keys(filterData).length > 0) {
+        andCondions.push({
+            AND: Object.keys(filterData).map((key) => ({
+                [key]: {
+                    equals: filterData[key],
+                },
+            })),
+        });
+    }
+    const whereConditons = { AND: andCondions };
+    const result = yield prisma_1.default.user.findMany({
+        where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" }, UserReference: {
+                some: {
+                    isVerified: false,
+                },
+            } }),
+        skip,
+        take: limit,
+        orderBy: options.sortBy && options.sortOrder
+            ? {
+                [options.sortBy]: options.sortOrder,
+            }
+            : {
+                createdAt: "desc",
+            },
+        select: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true,
+            avgRating: true,
+            isDeleted: true,
+            Profile: true,
+            DriverProfile: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+    });
+    const total = yield prisma_1.default.user.count({
+        where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" } }),
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: result,
+    };
+});
 exports.userService = {
     createUserIntoDb,
     getUsersFromDb,
@@ -338,4 +421,6 @@ exports.userService = {
     provideReview,
     userReviews,
     singleUser,
+    blockUser,
+    pendingReference
 };

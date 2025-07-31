@@ -17,6 +17,13 @@ router
   );
 
 router
+  .route("/pending")
+  .get(
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    userController.pendingReference
+  );
+
+router
   .route("/profile")
   .get(auth(), userController.getMyProfile)
   .put(
@@ -39,6 +46,9 @@ router
   );
 router.get("/review/:id", auth(), userController.userReviews);
 
-router.route("/:id").get(auth(), userController.singleUser);
+router
+  .route("/:id")
+  .get(auth(), userController.singleUser)
+  .delete(auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), userController.blockUser);
 
 export const UserRoutes = router;

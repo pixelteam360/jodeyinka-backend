@@ -13,8 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const config_1 = __importDefault(require("./config"));
+const node_cron_1 = __importDefault(require("node-cron"));
 const app_1 = __importDefault(require("./app"));
 const WebSocket_1 = require("./app/modules/WebSocket");
+const Dashboard_service_1 = require("./app/modules/Dashboard/Dashboard.service");
 let server;
 function startServer() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -24,6 +26,10 @@ function startServer() {
         (0, WebSocket_1.setupWebSocket)(server);
     });
 }
+node_cron_1.default.schedule("0 0 1 * *", () => __awaiter(void 0, void 0, void 0, function* () {
+    yield (0, Dashboard_service_1.monthlyJobPay)();
+    yield (0, Dashboard_service_1.monthlyDriverPay)();
+}));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         yield startServer();

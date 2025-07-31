@@ -12,8 +12,8 @@ const globalErrorHandler_1 = __importDefault(require("./app/middlewares/globalEr
 const routes_1 = __importDefault(require("./app/routes"));
 const app = (0, express_1.default)();
 exports.corsOptions = {
-    origin: ["http://localhost:3001", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: ["http://localhost:3001", "http://localhost:3000", "https://pepperoniiiiii-dashboard.vercel.app"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 };

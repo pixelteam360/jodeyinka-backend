@@ -8,6 +8,7 @@ import { driverHireSearchAbleFields } from "../Driver/Driver.costant";
 import { IJobApplicationFilterRequest } from "./Dashboard.interface";
 import { jobApplicationSearchAbleFields } from "./Dashboard.costant";
 import httpStatus from "http-status";
+import { subMonths, format, startOfMonth } from "date-fns";
 
 const allHiring = async (
   params: IDriverHireFilterRequest,
@@ -159,6 +160,7 @@ const allJobApplication = async (
         : {
             adminApproved: "asc",
           },
+    include: { user: { select: { fullName: true } } },
   });
 
   const total = await prisma.jobApplication.count({
@@ -202,7 +204,155 @@ const overView = async () => {
     },
   });
 
-  return { totalUsers, totalRevenue: totalRevenue._sum.amount || 0 , totalPayment};
+  return {
+    totalUsers,
+    totalRevenue: totalRevenue._sum.amount || 0,
+    totalPayment,
+  };
+};
+
+const revenueChart = async () => {
+  const sixMonthsAgo = startOfMonth(subMonths(new Date(), 5));
+
+  const purchases = await prisma.adminPayment.findMany({
+    where: {
+      createdAt: {
+        gte: sixMonthsAgo,
+      },
+    },
+    select: {
+      createdAt: true,
+      amount: true,
+    },
+  });
+
+  const monthlyRevenueMap: Record<string, number> = {};
+
+  for (const purchase of purchases) {
+    const key = format(purchase.createdAt, "yyyy-MM");
+    monthlyRevenueMap[key] = (monthlyRevenueMap[key] || 0) + purchase.amount;
+  }
+
+  const chartData = Array.from({ length: 6 }).map((_, index) => {
+    const date = subMonths(new Date(), 5 - index);
+    const key = format(date, "yyyy-MM");
+    const monthName = format(date, "MMMM");
+
+    return {
+      month: monthName,
+      totalRevenue: Number((monthlyRevenueMap[key] || 0).toFixed(2)),
+    };
+  });
+
+  return chartData;
+};
+
+export const monthlyJobPay = async () => {
+  try {
+    const currentMonthStart = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+
+    const jobs = await prisma.job.findMany({
+      where: { status: "ACCEPTED" },
+      select: {
+        JobApplication: {
+          select: { id: true },
+        },
+      },
+    });
+
+    const paymentsToCreate: { jobApplicationId: string; date: Date }[] = [];
+
+    for (const job of jobs) {
+      for (const application of job.JobApplication) {
+        const alreadyPaid = await prisma.monthlyPayment.findFirst({
+          where: {
+            jobApplicationId: application.id,
+            date: {
+              gte: currentMonthStart,
+              lt: new Date(
+                currentMonthStart.getFullYear(),
+                currentMonthStart.getMonth() + 1,
+                1
+              ),
+            },
+          },
+        });
+
+        if (!alreadyPaid) {
+          paymentsToCreate.push({
+            date: new Date(),
+            jobApplicationId: application.id,
+          });
+        }
+      }
+    }
+
+    if (paymentsToCreate.length > 0) {
+      await prisma.$transaction(
+        paymentsToCreate.map((data) => prisma.monthlyPayment.create({ data }))
+      );
+    }
+
+    console.log(`${paymentsToCreate.length} monthly job payments created.`);
+  } catch (error) {
+    console.error("Error in monthly job payments:", error);
+  }
+};
+
+export const monthlyDriverPay = async () => {
+  try {
+    const currentMonthStart = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+
+    const hires = await prisma.driverHire.findMany({
+      where: { status: "ACCEPTED" },
+      select: {
+        id: true,
+      },
+    });
+
+    const paymentsToCreate: { driverHireId: string; date: Date }[] = [];
+
+    for (const hire of hires) {
+      const alreadyPaid = await prisma.monthlyPayment.findFirst({
+        where: {
+          driverHireId: hire.id,
+          date: {
+            gte: currentMonthStart,
+            lt: new Date(
+              currentMonthStart.getFullYear(),
+              currentMonthStart.getMonth() + 1,
+              1
+            ),
+          },
+        },
+      });
+
+      if (!alreadyPaid) {
+        paymentsToCreate.push({
+          date: new Date(),
+          driverHireId: hire.id,
+        });
+      }
+    }
+
+    if (paymentsToCreate.length > 0) {
+      await prisma.$transaction(
+        paymentsToCreate.map((data) => prisma.monthlyPayment.create({ data }))
+      );
+    }
+
+    console.log(`${paymentsToCreate.length} monthly driver payments created.`);
+  } catch (error) {
+    console.error("Error in monthly driver payments:", error);
+  }
 };
 
 export const DashboardService = {
@@ -210,5 +360,6 @@ export const DashboardService = {
   approveHiring,
   allJobApplication,
   approveApplication,
-  overView
+  overView,
+  revenueChart,
 };

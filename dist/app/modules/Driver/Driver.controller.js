@@ -53,7 +53,7 @@ const hireADriver = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, vo
 const bookmarkDriver = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield Driver_service_1.DriverService.bookmarkDriver(req.params.id, req.user.id);
     (0, sendResponse_1.default)(res, {
-        message: "Driver bookmarked successfully!",
+        message: "Bookmarked successfully!",
         data: result,
     });
 }));

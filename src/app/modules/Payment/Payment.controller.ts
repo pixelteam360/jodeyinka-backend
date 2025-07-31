@@ -9,7 +9,7 @@ const paymentForMoreDriver = catchAsync(async (req, res) => {
     req.user.id
   );
   sendResponse(res, {
-    message: "Payment successfull",
+    message: "Payment retrieved successfully",
     data: result,
   });
 });
@@ -18,7 +18,16 @@ const paymentForReview = catchAsync(async (req, res) => {
   console.log(req.body);
   const result = await PaymentService.paymentForReview(req.body, req.user.id);
   sendResponse(res, {
-    message: "Payment successfull",
+    message: "Payment retrieved successfully",
+    data: result,
+  });
+});
+
+const getAppPayment = catchAsync(async (req, res) => {
+  console.log(req.body);
+  const result = await PaymentService.getAppPayment();
+  sendResponse(res, {
+    message: "Payment retrieved successfully",
     data: result,
   });
 });
@@ -26,4 +35,5 @@ const paymentForReview = catchAsync(async (req, res) => {
 export const PaymentController = {
   paymentForMoreDriver,
   paymentForReview,
+  getAppPayment
 };

@@ -45,6 +45,7 @@ const myJobs = async (userId: string) => {
     where: {
       userId,
     },
+    include: { user: { select: { fullName: true } } },
   });
 
   return driverProfile;
@@ -138,6 +139,15 @@ const singleJob = async (id: string) => {
           image: true,
           avgRating: true,
           Profile: { select: { about: true } },
+        },
+      },
+      JobApplication: {
+        where: { status: "ACCEPTED" },
+        select: {
+          amount: true,
+          about: true,
+          status: true,
+          monthlyPayment: true,
         },
       },
     },
@@ -309,6 +319,10 @@ const acceptApplication = async (applicationId: string, userId: string) => {
         data: { hired: true },
       });
     }
+
+    await prisma.monthlyPayment.create({
+      data: { date: new Date(), jobApplicationId: jobApplication.id },
+    });
 
     return jobApplication;
   });

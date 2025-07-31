@@ -214,6 +214,7 @@ const getMyBookMarks = async (userId: string) => {
     select: {
       driver: {
         select: {
+          id: true,
           fullName: true,
           image: true,
           avgRating: true,
@@ -448,6 +449,7 @@ const singleHiring = async (hiringId: string, userId: string) => {
       user: {
         select: { id: true, image: true, fullName: true, avgRating: true },
       },
+      monthlyPayment: true,
     },
   });
 
@@ -532,6 +534,10 @@ const acceptHiring = async (hiringId: string, userId: string) => {
         data: { hired: true },
       });
     }
+
+    await prisma.monthlyPayment.create({
+      data: { date: new Date(), driverHireId: driverHire.id },
+    });
 
     return driverHire;
   });

@@ -22,14 +22,13 @@ const stripeAuth = (userId) => __awaiter(void 0, void 0, void 0, function* () {
         response_type: "code",
         scope: "read_write",
         client_id: process.env.STRIPE_CLIENT_ID,
-        redirect_uri: "https://darren4534-server.vercel.app/api/v1/stripe/callback",
+        redirect_uri: "https://jodeyinka-server.vercel.app/api/v1/stripe/callback",
         state: userId,
     });
     return accountLink;
 });
 const stripeCallback = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { code, state, error } = req.query;
-    console.log({ code }, { state }, error);
     if (error) {
         return res.status(400).send(`Error: ${error}`);
     }
@@ -64,15 +63,15 @@ const successStatus = () => __awaiter(void 0, void 0, void 0, function* () {
     };
 });
 const payProvider = (payload, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const unitPay = yield prisma_1.default.unitPayment.findFirst({
-        where: { id: payload.unitPaymentId },
+    const unitPay = yield prisma_1.default.monthlyPayment.findFirst({
+        where: { id: payload.monthlyPaymentId },
         select: { id: true, status: true },
     });
     if (!unitPay) {
-        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "unit Pay not found");
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Monthly Payment  not found");
     }
     if (unitPay.status === "PAID") {
-        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "unit Payment already completed");
+        throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "Monthly Payment already completed");
     }
     const receiver = yield prisma_1.default.user.findFirst({
         where: { id: payload.receiverId },
@@ -95,7 +94,7 @@ const payProvider = (payload, userId) => __awaiter(void 0, void 0, void 0, funct
                 destination: receiver.stripeAccountId,
             },
         });
-        yield prisma_1.default.unitPayment.update({
+        yield prisma_1.default.monthlyPayment.update({
             where: { id: unitPay.id },
             data: { status: "PAID" },
         });
@@ -103,10 +102,9 @@ const payProvider = (payload, userId) => __awaiter(void 0, void 0, void 0, funct
             data: {
                 amount: payload.amount,
                 paymentIntentId: paymentIntent.id,
-                paymentType: payload.paymentType,
                 senderId: userId,
                 receiverId: payload.receiverId,
-                unitPaymentId: payload.unitPaymentId,
+                monthlyPaymentId: payload.monthlyPaymentId,
             },
         });
         return {
