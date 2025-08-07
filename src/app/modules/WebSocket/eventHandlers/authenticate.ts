@@ -6,7 +6,7 @@ import { broadcastToAll } from "../utils";
 import { WebSocketServer } from "ws";
 
 const onlineUsers = new Set<string>();
-const userSockets = new Map<string, ExtendedWebSocket>();
+export const userSockets = new Map<string, ExtendedWebSocket>();
 
 export async function handleAuthenticate(
   ws: ExtendedWebSocket,
@@ -35,6 +35,18 @@ export async function handleAuthenticate(
   ws.userId = user.id;
   onlineUsers.add(user.id);
   userSockets.set(user.id, ws);
+
+  ws.send(
+    JSON.stringify({
+      event: "authenticated",
+      message: "Authentication successful",
+      user: {
+        id: userData.id,
+        fullName: userData.fullName,
+        image: userData.image,
+      },
+    })
+  );
 
   broadcastToAll(wss, {
     event: "userStatus",

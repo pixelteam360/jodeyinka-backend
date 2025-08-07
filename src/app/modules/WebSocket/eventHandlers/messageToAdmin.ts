@@ -1,16 +1,17 @@
 import prisma from "../../../../shared/prisma";
 import { ExtendedWebSocket } from "../types";
-
-const userSockets = new Map<string, ExtendedWebSocket>();
+import { userSockets } from "./authenticate";
 
 export async function messageToAdmin(ws: ExtendedWebSocket, data: any) {
   const { message, images } = data;
+  console.log(message);
 
   const receiver = await prisma.user.findFirst({
     where: { role: "SUPER_ADMIN" },
     select: { id: true, role: true },
   });
 
+  console.log(receiver);
   const receiverId = receiver?.id;
 
   if (!ws.userId || !receiverId || !message) {
@@ -45,8 +46,9 @@ export async function messageToAdmin(ws: ExtendedWebSocket, data: any) {
   });
 
   const receiverSocket = userSockets.get(receiverId);
+
   if (receiverSocket) {
-    receiverSocket.send(JSON.stringify({ event: "message", data: chat }));
+    receiverSocket.send(JSON.stringify({ event: "messageToAdmin", data: chat }));
   }
-  ws.send(JSON.stringify({ event: "message", data: chat }));
+  ws.send(JSON.stringify({ event: "messageToAdmin", data: chat }));
 }
