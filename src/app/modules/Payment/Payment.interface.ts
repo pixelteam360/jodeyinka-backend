@@ -10,3 +10,10 @@ export type TPaymentHire = {
   userId: string;
   PaymentId: string;
 };
+
+export type IPaymentFilterRequest = {
+  name?: string | undefined;
+  email?: string | undefined;
+  contactNumber?: string | undefined;
+  searchTerm?: string | undefined;
+};

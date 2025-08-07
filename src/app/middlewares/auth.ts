@@ -37,7 +37,7 @@ const auth = (...roles: string[]) => {
       }
 
       if (user.isDeleted) {
-        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
+        throw new ApiError(httpStatus.UNAUTHORIZED, "This account is blocked");
       }
 
       req.user = verifiedUser as JwtPayload;

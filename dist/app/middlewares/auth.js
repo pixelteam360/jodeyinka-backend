@@ -35,7 +35,7 @@ const auth = (...roles) => {
                 throw new ApiErrors_1.default(http_status_1.default.NOT_FOUND, "User not found!");
             }
             if (user.isDeleted) {
-                throw new ApiErrors_1.default(http_status_1.default.UNAUTHORIZED, "You are not authorized!");
+                throw new ApiErrors_1.default(http_status_1.default.UNAUTHORIZED, "This account is blocked");
             }
             req.user = verifiedUser;
             if (roles.length && !roles.includes(verifiedUser.role)) {

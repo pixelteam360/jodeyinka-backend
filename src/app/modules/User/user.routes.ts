@@ -24,6 +24,13 @@ router
   );
 
 router
+  .route("/blocked")
+  .get(
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    userController.blockedUsers
+  );
+
+router
   .route("/profile")
   .get(auth(), userController.getMyProfile)
   .put(

@@ -9,6 +9,9 @@ import { IJobApplicationFilterRequest } from "./Dashboard.interface";
 import { jobApplicationSearchAbleFields } from "./Dashboard.costant";
 import httpStatus from "http-status";
 import { subMonths, format, startOfMonth } from "date-fns";
+import { TUser } from "../User/user.interface";
+import config from "../../../config";
+import * as bcrypt from "bcrypt";
 
 const allHiring = async (
   params: IDriverHireFilterRequest,
@@ -60,6 +63,7 @@ const allHiring = async (
       id: true,
       offerAmount: true,
       status: true,
+      aboutOffer: true,
       user: {
         select: {
           id: true,
@@ -247,6 +251,25 @@ const revenueChart = async () => {
   return chartData;
 };
 
+const admins = async () => {
+  const res = await prisma.user.findMany({ where: { role: "ADMIN" } });
+
+  return res;
+};
+
+const createAdmin = async (payload: TUser) => {
+
+    const hashedPassword: string = await bcrypt.hash(
+      payload.password,
+      Number(config.bcrypt_salt_rounds)
+    );
+  
+
+  const res = await prisma.user.create({ data: { ...payload, password: hashedPassword, role: "ADMIN" } });
+
+  return res
+};
+
 export const monthlyJobPay = async () => {
   try {
     const currentMonthStart = new Date(
@@ -362,4 +385,6 @@ export const DashboardService = {
   approveApplication,
   overView,
   revenueChart,
+  admins,
+  createAdmin
 };

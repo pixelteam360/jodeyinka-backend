@@ -205,6 +205,7 @@ const getMyProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
                 image: true,
                 role: true,
                 completedProfile: true,
+                stripeAccountId: true,
                 avgRating: true,
                 _count: {
                     select: {
@@ -227,6 +228,7 @@ const getMyProfile = (id) => __awaiter(void 0, void 0, void 0, function* () {
             image: true,
             role: true,
             completedProfile: true,
+            stripeAccountId: true,
             avgRating: true,
             _count: {
                 select: {
@@ -413,6 +415,66 @@ const pendingReference = (params, options) => __awaiter(void 0, void 0, void 0, 
         data: result,
     };
 });
+const blockedUsers = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
+    const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
+    const andCondions = [];
+    if (params.searchTerm) {
+        andCondions.push({
+            OR: user_costant_1.userSearchAbleFields.map((field) => ({
+                [field]: {
+                    contains: params.searchTerm,
+                    mode: "insensitive",
+                },
+            })),
+        });
+    }
+    if (Object.keys(filterData).length > 0) {
+        andCondions.push({
+            AND: Object.keys(filterData).map((key) => ({
+                [key]: {
+                    equals: filterData[key],
+                },
+            })),
+        });
+    }
+    const whereConditons = { AND: andCondions };
+    const result = yield prisma_1.default.user.findMany({
+        where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" }, isDeleted: true }),
+        skip,
+        take: limit,
+        orderBy: options.sortBy && options.sortOrder
+            ? {
+                [options.sortBy]: options.sortOrder,
+            }
+            : {
+                createdAt: "desc",
+            },
+        select: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true,
+            avgRating: true,
+            isDeleted: true,
+            Profile: true,
+            DriverProfile: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+    });
+    const total = yield prisma_1.default.user.count({
+        where: Object.assign(Object.assign({}, whereConditons), { NOT: { role: "SUPER_ADMIN" }, isDeleted: true }),
+    });
+    return {
+        meta: {
+            page,
+            limit,
+            total,
+        },
+        data: result,
+    };
+});
 exports.userService = {
     createUserIntoDb,
     getUsersFromDb,
@@ -422,5 +484,6 @@ exports.userService = {
     userReviews,
     singleUser,
     blockUser,
-    pendingReference
+    pendingReference,
+    blockedUsers,
 };

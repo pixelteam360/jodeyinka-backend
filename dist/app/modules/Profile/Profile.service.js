@@ -57,14 +57,6 @@ const createProfileIntoDb = (payload, userId) => __awaiter(void 0, void 0, void 
                 },
             });
         })));
-        yield prisma.adminPayment.create({
-            data: {
-                amount: payload.paymentAmount,
-                PaymentFor: "DRIVER_HIRE",
-                paymentId: payload.paymentId,
-                reviewerId: user.id,
-            },
-        });
         return profile;
     }));
     return result;

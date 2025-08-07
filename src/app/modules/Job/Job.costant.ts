@@ -3,6 +3,7 @@ export const jobFilterableFields = [
   "searchTerm",
   "location",
   "status",
+  "userRole"
 ];
 
-export const jobSearchAbleFields = ["hiringType", "location", "status"];
+export const jobSearchAbleFields = [ "location"];

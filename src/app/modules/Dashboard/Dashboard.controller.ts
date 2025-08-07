@@ -56,6 +56,22 @@ const revenueChart = catchAsync(async (req, res) => {
   });
 });
 
+const admins = catchAsync(async (req, res) => {
+  const result = await DashboardService.admins();
+  sendResponse(res, {
+    message: "All Admins retrieved successfully!",
+    data: result,
+  });
+});
+
+const createAdmin = catchAsync(async (req, res) => {
+  const result = await DashboardService.createAdmin(req.body);
+  sendResponse(res, {
+    message: "All Admins retrieved successfully!",
+    data: result,
+  });
+});
+
 export const DashboardController = {
   allHiring,
   approveHiring,
@@ -63,4 +79,6 @@ export const DashboardController = {
   approveApplication,
   overView,
   revenueChart,
+  admins,
+  createAdmin,
 };

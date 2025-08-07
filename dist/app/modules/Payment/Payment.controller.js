@@ -14,10 +14,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentController = void 0;
 const catchAsync_1 = __importDefault(require("../../../shared/catchAsync"));
+const pick_1 = __importDefault(require("../../../shared/pick"));
 const sendResponse_1 = __importDefault(require("../../../shared/sendResponse"));
+const Payment_costant_1 = require("./Payment.costant");
 const Payment_service_1 = require("./Payment.service");
 const paymentForMoreDriver = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
     const result = yield Payment_service_1.PaymentService.paymentForMoreDriver(req.body, req.user.id);
     (0, sendResponse_1.default)(res, {
         message: "Payment retrieved successfully",
@@ -25,7 +26,6 @@ const paymentForMoreDriver = (0, catchAsync_1.default)((req, res) => __awaiter(v
     });
 }));
 const paymentForReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
     const result = yield Payment_service_1.PaymentService.paymentForReview(req.body, req.user.id);
     (0, sendResponse_1.default)(res, {
         message: "Payment retrieved successfully",
@@ -33,8 +33,9 @@ const paymentForReview = (0, catchAsync_1.default)((req, res) => __awaiter(void 
     });
 }));
 const getAppPayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log(req.body);
-    const result = yield Payment_service_1.PaymentService.getAppPayment();
+    const filters = (0, pick_1.default)(req.query, Payment_costant_1.paymentFilterableFields);
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield Payment_service_1.PaymentService.getAppPayment(filters, options);
     (0, sendResponse_1.default)(res, {
         message: "Payment retrieved successfully",
         data: result,
@@ -43,5 +44,5 @@ const getAppPayment = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, 
 exports.PaymentController = {
     paymentForMoreDriver,
     paymentForReview,
-    getAppPayment
+    getAppPayment,
 };

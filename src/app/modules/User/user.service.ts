@@ -195,6 +195,7 @@ const getMyProfile = async (id: string) => {
         image: true,
         role: true,
         completedProfile: true,
+        stripeAccountId: true,
         avgRating: true,
         _count: {
           select: {
@@ -218,6 +219,7 @@ const getMyProfile = async (id: string) => {
       image: true,
       role: true,
       completedProfile: true,
+      stripeAccountId: true,
       avgRating: true,
       _count: {
         select: {
@@ -459,6 +461,76 @@ const pendingReference = async (
   };
 };
 
+const blockedUsers = async (
+  params: IUserFilterRequest,
+  options: IPaginationOptions
+) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = params;
+
+  const andCondions: Prisma.UserWhereInput[] = [];
+
+  if (params.searchTerm) {
+    andCondions.push({
+      OR: userSearchAbleFields.map((field) => ({
+        [field]: {
+          contains: params.searchTerm,
+          mode: "insensitive",
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andCondions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+  const whereConditons: Prisma.UserWhereInput = { AND: andCondions };
+
+  const result = await prisma.user.findMany({
+    where: { ...whereConditons, NOT: { role: "SUPER_ADMIN" }, isDeleted: true },
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [options.sortBy]: options.sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+      avgRating: true,
+      isDeleted: true,
+      Profile: true,
+      DriverProfile: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+  const total = await prisma.user.count({
+    where: { ...whereConditons, NOT: { role: "SUPER_ADMIN" }, isDeleted: true },
+  });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result,
+  };
+};
+
 export const userService = {
   createUserIntoDb,
   getUsersFromDb,
@@ -468,5 +540,6 @@ export const userService = {
   userReviews,
   singleUser,
   blockUser,
-  pendingReference
+  pendingReference,
+  blockedUsers,
 };

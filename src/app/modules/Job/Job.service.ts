@@ -60,27 +60,51 @@ const getAllJobs = async (
 
   const andConditions: Prisma.JobWhereInput[] = [];
 
-  if (params.searchTerm) {
+  if (searchTerm) {
     andConditions.push({
       OR: jobSearchAbleFields.map((field) => ({
         [field]: {
-          contains: params.searchTerm,
+          contains: searchTerm,
           mode: "insensitive",
         },
       })),
     });
   }
 
-  if (Object.keys(filterData).length > 0) {
+  // Normalize filterData (handle user.role separately)
+  const jobFilters: Record<string, any> = {};
+  let userRoleFilter: "EMPLOYER" | "AGENT" | undefined;
+
+  Object.entries(filterData).forEach(([key, value]) => {
+    if (key === "userRole" && (value === "EMPLOYER" || value === "AGENT")) {
+      userRoleFilter = value;
+    } else {
+      jobFilters[key] = value;
+    }
+  });
+
+  if (Object.keys(jobFilters).length > 0) {
     andConditions.push({
-      AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
+      AND: Object.entries(jobFilters).map(([key, value]) => ({
+        [key]: { equals: value },
       })),
     });
   }
-  const whereConditions: Prisma.JobWhereInput = { AND: andConditions };
+
+  if (userRoleFilter) {
+    andConditions.push({
+      user: {
+        role: {
+          equals: userRoleFilter,
+        },
+      },
+    });
+  }
+
+  const whereConditions: Prisma.JobWhereInput =
+    andConditions.length > 0
+      ? { AND: andConditions, status: "PENDING" }
+      : { status: "PENDING" };
 
   const result = await prisma.job.findMany({
     where: { ...whereConditions, status: "PENDING" },
@@ -94,18 +118,19 @@ const getAllJobs = async (
         : {
             createdAt: "desc",
           },
-
     select: {
       id: true,
       location: true,
       amount: true,
       hiringType: true,
+      status: true,
       user: {
         select: {
           id: true,
           fullName: true,
           image: true,
           avgRating: true,
+          role: true,
         },
       },
     },
@@ -230,7 +255,16 @@ const jobApplications = async (jobId: string) => {
       id: true,
       amount: true,
       about: true,
-      user: { select: { id: true, fullName: true, image: true } },
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          image: true,
+          avgRating: true,
+          Profile: { select: { address: true } },
+          DriverProfile: { select: { address: true } },
+        },
+      },
     },
   });
 

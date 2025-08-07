@@ -6,5 +6,6 @@ exports.jobFilterableFields = [
     "searchTerm",
     "location",
     "status",
+    "userRole"
 ];
-exports.jobSearchAbleFields = ["hiringType", "location", "status"];
+exports.jobSearchAbleFields = ["location"];

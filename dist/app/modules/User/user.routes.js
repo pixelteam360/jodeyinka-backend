@@ -20,6 +20,9 @@ router
     .route("/pending")
     .get((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN), user_controller_1.userController.pendingReference);
 router
+    .route("/blocked")
+    .get((0, auth_1.default)(client_1.UserRole.ADMIN, client_1.UserRole.SUPER_ADMIN), user_controller_1.userController.blockedUsers);
+router
     .route("/profile")
     .get((0, auth_1.default)(), user_controller_1.userController.getMyProfile)
     .put((0, auth_1.default)(), fileUploader_1.fileUploader.uploadSingle, (req, res, next) => {

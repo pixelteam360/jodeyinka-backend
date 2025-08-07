@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31,6 +54,8 @@ const Driver_costant_1 = require("../Driver/Driver.costant");
 const Dashboard_costant_1 = require("./Dashboard.costant");
 const http_status_1 = __importDefault(require("http-status"));
 const date_fns_1 = require("date-fns");
+const config_1 = __importDefault(require("../../../config"));
+const bcrypt = __importStar(require("bcrypt"));
 const allHiring = (params, options) => __awaiter(void 0, void 0, void 0, function* () {
     const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
@@ -71,6 +96,7 @@ const allHiring = (params, options) => __awaiter(void 0, void 0, void 0, functio
             id: true,
             offerAmount: true,
             status: true,
+            aboutOffer: true,
             user: {
                 select: {
                     id: true,
@@ -226,6 +252,15 @@ const revenueChart = () => __awaiter(void 0, void 0, void 0, function* () {
     });
     return chartData;
 });
+const admins = () => __awaiter(void 0, void 0, void 0, function* () {
+    const res = yield prisma_1.default.user.findMany({ where: { role: "ADMIN" } });
+    return res;
+});
+const createAdmin = (payload) => __awaiter(void 0, void 0, void 0, function* () {
+    const hashedPassword = yield bcrypt.hash(payload.password, Number(config_1.default.bcrypt_salt_rounds));
+    const res = yield prisma_1.default.user.create({ data: Object.assign(Object.assign({}, payload), { password: hashedPassword, role: "ADMIN" }) });
+    return res;
+});
 const monthlyJobPay = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -311,4 +346,6 @@ exports.DashboardService = {
     approveApplication,
     overView,
     revenueChart,
+    admins,
+    createAdmin
 };

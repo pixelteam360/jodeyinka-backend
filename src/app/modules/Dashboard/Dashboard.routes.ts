@@ -2,6 +2,8 @@ import express, { NextFunction, Request, Response } from "express";
 import auth from "../../middlewares/auth";
 import { DashboardController } from "./Dashboard.controller";
 import { UserRole } from "@prisma/client";
+import validateRequest from "../../middlewares/validateRequest";
+import { UserValidation } from "../User/user.validation";
 
 const router = express.Router();
 
@@ -28,6 +30,15 @@ router.get(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   DashboardController.revenueChart
 );
+
+router
+  .route("/admins")
+  .get(auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), DashboardController.admins)
+  .post(
+    auth(UserRole.SUPER_ADMIN),
+    validateRequest(UserValidation.CreateUserValidationSchema),
+    DashboardController.createAdmin
+  );
 
 router
   .route("/hiring-approve/:id")

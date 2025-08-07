@@ -87,6 +87,16 @@ const pendingReference = catchAsync(async (req, res) => {
   });
 });
 
+const blockedUsers = catchAsync(async (req, res) => {
+  const filters = pick(req.query, userFilterableFields);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await userService.blockedUsers(filters, options);
+  sendResponse(res, {
+    message: "Pending User successfully",
+    data: result,
+  });
+});
+
 export const userController = {
   createUser,
   getUsers,
@@ -96,5 +106,6 @@ export const userController = {
   provideReview,
   userReviews,
   blockUser,
-  pendingReference
+  pendingReference,
+  blockedUsers
 };

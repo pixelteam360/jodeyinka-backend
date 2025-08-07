@@ -43,15 +43,6 @@ const createProfileIntoDb = async (payload: TProfile, userId: string) => {
       })
     );
 
-    await prisma.adminPayment.create({
-      data: {
-        amount: payload.paymentAmount,
-        PaymentFor: "DRIVER_HIRE",
-        paymentId: payload.paymentId,
-        reviewerId: user.id,
-      },
-    });
-
     return profile;
   });
 

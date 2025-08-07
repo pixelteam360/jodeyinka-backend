@@ -64,6 +64,20 @@ const revenueChart = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, v
         data: result,
     });
 }));
+const admins = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Dashboard_service_1.DashboardService.admins();
+    (0, sendResponse_1.default)(res, {
+        message: "All Admins retrieved successfully!",
+        data: result,
+    });
+}));
+const createAdmin = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield Dashboard_service_1.DashboardService.createAdmin(req.body);
+    (0, sendResponse_1.default)(res, {
+        message: "All Admins retrieved successfully!",
+        data: result,
+    });
+}));
 exports.DashboardController = {
     allHiring,
     approveHiring,
@@ -71,4 +85,6 @@ exports.DashboardController = {
     approveApplication,
     overView,
     revenueChart,
+    admins,
+    createAdmin,
 };

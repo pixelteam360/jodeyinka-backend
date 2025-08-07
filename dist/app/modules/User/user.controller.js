@@ -88,6 +88,15 @@ const pendingReference = (0, catchAsync_1.default)((req, res) => __awaiter(void 
         data: result,
     });
 }));
+const blockedUsers = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const filters = (0, pick_1.default)(req.query, user_costant_1.userFilterableFields);
+    const options = (0, pick_1.default)(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+    const result = yield user_service_1.userService.blockedUsers(filters, options);
+    (0, sendResponse_1.default)(res, {
+        message: "Pending User successfully",
+        data: result,
+    });
+}));
 exports.userController = {
     createUser,
     getUsers,
@@ -97,5 +106,6 @@ exports.userController = {
     provideReview,
     userReviews,
     blockUser,
-    pendingReference
+    pendingReference,
+    blockedUsers
 };

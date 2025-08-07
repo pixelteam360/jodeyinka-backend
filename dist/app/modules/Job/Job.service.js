@@ -64,26 +64,46 @@ const getAllJobs = (params, options) => __awaiter(void 0, void 0, void 0, functi
     const { page, limit, skip } = paginationHelper_1.paginationHelper.calculatePagination(options);
     const { searchTerm } = params, filterData = __rest(params, ["searchTerm"]);
     const andConditions = [];
-    if (params.searchTerm) {
+    if (searchTerm) {
         andConditions.push({
             OR: Job_costant_1.jobSearchAbleFields.map((field) => ({
                 [field]: {
-                    contains: params.searchTerm,
+                    contains: searchTerm,
                     mode: "insensitive",
                 },
             })),
         });
     }
-    if (Object.keys(filterData).length > 0) {
+    // Normalize filterData (handle user.role separately)
+    const jobFilters = {};
+    let userRoleFilter;
+    Object.entries(filterData).forEach(([key, value]) => {
+        if (key === "userRole" && (value === "EMPLOYER" || value === "AGENT")) {
+            userRoleFilter = value;
+        }
+        else {
+            jobFilters[key] = value;
+        }
+    });
+    if (Object.keys(jobFilters).length > 0) {
         andConditions.push({
-            AND: Object.keys(filterData).map((key) => ({
-                [key]: {
-                    equals: filterData[key],
-                },
+            AND: Object.entries(jobFilters).map(([key, value]) => ({
+                [key]: { equals: value },
             })),
         });
     }
-    const whereConditions = { AND: andConditions };
+    if (userRoleFilter) {
+        andConditions.push({
+            user: {
+                role: {
+                    equals: userRoleFilter,
+                },
+            },
+        });
+    }
+    const whereConditions = andConditions.length > 0
+        ? { AND: andConditions, status: "PENDING" }
+        : { status: "PENDING" };
     const result = yield prisma_1.default.job.findMany({
         where: Object.assign(Object.assign({}, whereConditions), { status: "PENDING" }),
         skip,
@@ -100,12 +120,14 @@ const getAllJobs = (params, options) => __awaiter(void 0, void 0, void 0, functi
             location: true,
             amount: true,
             hiringType: true,
+            status: true,
             user: {
                 select: {
                     id: true,
                     fullName: true,
                     image: true,
                     avgRating: true,
+                    role: true,
                 },
             },
         },
@@ -200,7 +222,16 @@ const jobApplications = (jobId) => __awaiter(void 0, void 0, void 0, function* (
             id: true,
             amount: true,
             about: true,
-            user: { select: { id: true, fullName: true, image: true } },
+            user: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    image: true,
+                    avgRating: true,
+                    Profile: { select: { address: true } },
+                    DriverProfile: { select: { address: true } },
+                },
+            },
         },
     });
     return res;
