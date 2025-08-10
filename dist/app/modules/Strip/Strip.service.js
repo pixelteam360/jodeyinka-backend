@@ -94,7 +94,7 @@ const payProvider = (payload, userId) => __awaiter(void 0, void 0, void 0, funct
             },
         });
         const paymentIntent = yield stripe.paymentIntents.create({
-            amount: payload.amount,
+            amount: payload.amount * 100,
             currency: "usd",
             customer: customer.id,
             payment_method: payload.paymentMethodId,
