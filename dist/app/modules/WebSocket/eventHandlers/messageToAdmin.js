@@ -14,14 +14,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.messageToAdmin = messageToAdmin;
 const prisma_1 = __importDefault(require("../../../../shared/prisma"));
-const userSockets = new Map();
+const authenticate_1 = require("./authenticate");
 function messageToAdmin(ws, data) {
     return __awaiter(this, void 0, void 0, function* () {
         const { message, images } = data;
+        console.log(message);
         const receiver = yield prisma_1.default.user.findFirst({
             where: { role: "SUPER_ADMIN" },
             select: { id: true, role: true },
         });
+        console.log(receiver);
         const receiverId = receiver === null || receiver === void 0 ? void 0 : receiver.id;
         if (!ws.userId || !receiverId || !message) {
             return ws.send(JSON.stringify({ event: "error", message: "Invalid message payload" }));
@@ -48,10 +50,10 @@ function messageToAdmin(ws, data) {
                 images: images || "",
             },
         });
-        const receiverSocket = userSockets.get(receiverId);
+        const receiverSocket = authenticate_1.userSockets.get(receiverId);
         if (receiverSocket) {
-            receiverSocket.send(JSON.stringify({ event: "message", data: chat }));
+            receiverSocket.send(JSON.stringify({ event: "messageToAdmin", data: chat }));
         }
-        ws.send(JSON.stringify({ event: "message", data: chat }));
+        ws.send(JSON.stringify({ event: "messageToAdmin", data: chat }));
     });
 }

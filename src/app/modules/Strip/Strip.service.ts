@@ -73,7 +73,10 @@ const payProvider = async (payload: TPayProvider, userId: string) => {
   }
 
   if (unitPay.status === "PAID") {
-    throw new ApiError(httpStatus.NOT_FOUND, "Monthly Payment already completed");
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "Monthly Payment already completed"
+    );
   }
 
   const receiver = await prisma.user.findFirst({
@@ -90,14 +93,30 @@ const payProvider = async (payload: TPayProvider, userId: string) => {
   }
 
   try {
+    const customer = await stripe.customers.create({
+      payment_method: payload.paymentMethodId,
+      description: `Customer for user ${userId}`,
+    });
+
+    await stripe.paymentMethods.attach(payload.paymentMethodId, {
+      customer: customer.id,
+    });
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: {
+        default_payment_method: payload.paymentMethodId,
+      },
+    });
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: payload.amount,
       currency: "usd",
+      customer: customer.id,
       payment_method: payload.paymentMethodId,
       confirm: true,
       automatic_payment_methods: {
         enabled: true,
-        allow_redirects: "never", 
+        allow_redirects: "never",
       },
       transfer_data: {
         destination: receiver.stripeAccountId,

@@ -81,9 +81,22 @@ const payProvider = (payload, userId) => __awaiter(void 0, void 0, void 0, funct
         throw new ApiErrors_1.default(http_status_1.default.BAD_REQUEST, "Receiver not connected to Stripe");
     }
     try {
+        const customer = yield stripe.customers.create({
+            payment_method: payload.paymentMethodId,
+            description: `Customer for user ${userId}`,
+        });
+        yield stripe.paymentMethods.attach(payload.paymentMethodId, {
+            customer: customer.id,
+        });
+        yield stripe.customers.update(customer.id, {
+            invoice_settings: {
+                default_payment_method: payload.paymentMethodId,
+            },
+        });
         const paymentIntent = yield stripe.paymentIntents.create({
             amount: payload.amount,
             currency: "usd",
+            customer: customer.id,
             payment_method: payload.paymentMethodId,
             confirm: true,
             automatic_payment_methods: {
